@@ -16,18 +16,7 @@
     z-index: -1;
 }
 
-.bg-3d span {
-    position: absolute;
-    inset: -40%;
-    background: radial-gradient(
-        circle at center,
-        rgba(124,58,237,0.35),
-        rgba(34,211,238,0.18),
-        transparent 60%
-    );
-    transform-style: preserve-3d;
-    animation: rotate3d 20s linear infinite;
-}
+
 
 /* layered depth */
 .bg-3d span:nth-child(1) {
@@ -157,4 +146,56 @@
 .footer-text a {
     color: #7c3aed;
     text-decoration: none;
+}
+/* ===============================
+   FLOATING DUST BACKGROUND
+================================ */
+
+body {
+    min-height: 100vh;
+    background: #020617;
+    overflow: hidden;
+}
+
+/* FAR DUST */
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background-image:
+        radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.18) 50%, transparent 60%),
+        radial-gradient(1px 1px at 55% 70%, rgba(255,255,255,0.14) 50%, transparent 60%),
+        radial-gradient(1px 1px at 80% 40%, rgba(255,255,255,0.12) 50%, transparent 60%);
+    background-size: 520px 520px;
+    animation: dustFar 130s linear infinite;
+    pointer-events: none;
+
+    transform: translate(var(--far-x, 0), var(--far-y, 0));
+}
+
+/* NEAR DUST */
+body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background-image:
+        radial-gradient(1.5px 1.5px at 25% 20%, rgba(255,255,255,0.35) 50%, transparent 60%),
+        radial-gradient(1.5px 1.5px at 60% 45%, rgba(255,255,255,0.3) 50%, transparent 60%),
+        radial-gradient(1.5px 1.5px at 85% 35%, rgba(255,255,255,0.25) 50%, transparent 60%);
+    background-size: 320px 320px;
+    animation: dustNear 75s linear infinite;
+    pointer-events: none;
+
+    transform: translate(var(--near-x, 0), var(--near-y, 0));
+}
+
+/* MOTION */
+@keyframes dustFar {
+    from { transform: translate(var(--far-x, 0), calc(var(--far-y, 0) + 0px)); }
+    to   { transform: translate(var(--far-x, 0), calc(var(--far-y, 0) - 1800px)); }
+}
+
+@keyframes dustNear {
+    from { transform: translate(var(--near-x, 0), calc(var(--near-y, 0) + 0px)); }
+    to   { transform: translate(var(--near-x, 0), calc(var(--near-y, 0) - 1800px)); }
 }

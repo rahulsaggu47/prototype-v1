@@ -1,3 +1,6 @@
+/* ===============================
+   RESET
+================================ */
 * {
     margin: 0;
     padding: 0;
@@ -5,15 +8,35 @@
     font-family: "Inter", system-ui, sans-serif;
 }
 
+/* ===============================
+   ANIMATED BACKGROUND
+================================ */
 body {
     min-height: 100vh;
-    background: radial-gradient(circle at top, #0f172a, #020617);
+    background: #020617;
+    overflow: hidden;
+
     display: flex;
     align-items: center;
     justify-content: center;
     color: #e5e7eb;
+
+    perspective: 1200px;
 }
 
+
+@keyframes bgMove {
+    0% {
+        background-position: 0% 0%, 100% 0%, 50% 100%;
+    }
+    100% {
+        background-position: 100% 50%, 0% 80%, 60% 0%;
+    }
+}
+
+/* ===============================
+   WRAPPER & CARD
+================================ */
 .genre-wrapper {
     width: 100%;
     display: flex;
@@ -21,112 +44,244 @@ body {
 }
 
 .genre-card {
-    width: 520px;
-    padding: 44px 42px;
-    border-radius: 18px;
-    background: rgba(8,12,25,0.85);
-    backdrop-filter: blur(16px);
-
-    border: 1px solid rgba(255,255,255,0.08);
-    box-shadow: 0 30px 80px rgba(0,0,0,0.6);
-
+    width: 560px;
+    padding: 50px 46px;
+    border-radius: 22px;
     text-align: center;
+
+    background: rgba(10, 10, 30, 0.88);
+    backdrop-filter: blur(22px);
+
+    border: 1px solid rgba(255,255,255,0.1);
+
+    box-shadow:
+        0 50px 150px rgba(0,0,0,0.8),
+        0 0 60px rgba(168,85,247,0.25);
 }
 
+/* ===============================
+   TEXT
+================================ */
 .genre-card h1 {
-    font-size: 26px;
+    font-size: 27px;
     font-weight: 700;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
 }
 
 .subtitle {
     font-size: 14px;
-    color: #9ca3af;
-    margin-bottom: 28px;
+    color: #c7d2fe;
+    margin-bottom: 30px;
 }
 
-/* GRID */
-.genre-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-    margin-bottom: 28px;
-}
-
-/* GENRE CHIP */
-.genre-chip {
-    position: relative;
-    cursor: pointer;
-}
-
-.genre-chip input {
-    display: none;
-}
-
-.genre-chip span {
-    display: block;
-    padding: 10px 12px;
-    border-radius: 10px;
-
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
-
-    font-size: 13px;
-    color: #cbd5f5;
-    transition: all 0.15s ease;
-}
-
-/* SELECTED */
-.genre-chip input:checked + span {
-    background: rgba(56,189,248,0.18);
-    border-color: #38bdf8;
-    color: #ffffff;
-}
-
-/* BUTTON */
-button {
-    width: 100%;
+/* ===============================
+   ERROR MESSAGE
+================================ */
+.genre-error {
+    margin-bottom: 22px;
     padding: 14px;
     border-radius: 12px;
-    border: none;
-
-    background: linear-gradient(135deg, #2563eb, #38bdf8);
-    color: white;
-
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-}
-
-button:hover {
-    box-shadow: 0 14px 40px rgba(56,189,248,0.35);
-}
-
-
-/* ERROR MESSAGE */
-.genre-error {
-    margin-bottom: 18px;
-    padding: 12px 14px;
-    border-radius: 10px;
-
-    background: rgba(239, 68, 68, 0.15);
-    border: 1px solid rgba(239, 68, 68, 0.35);
+    background: rgba(239,68,68,0.18);
+    border: 1px solid rgba(239,68,68,0.45);
     color: #fecaca;
-
-    font-size: 13px;
-    text-align: center;
+    box-shadow: 0 0 25px rgba(239,68,68,0.45);
 }
 
-/* SHAKE ANIMATION */
 .shake {
     animation: shake 0.35s ease;
 }
 
 @keyframes shake {
     0% { transform: translateX(0); }
-    20% { transform: translateX(-6px); }
-    40% { transform: translateX(6px); }
-    60% { transform: translateX(-4px); }
-    80% { transform: translateX(4px); }
+    25% { transform: translateX(-6px); }
+    50% { transform: translateX(6px); }
+    75% { transform: translateX(-4px); }
     100% { transform: translateX(0); }
+}
+
+/* ===============================
+   GRID
+================================ */
+.genre-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 34px;
+}
+
+/* ===============================
+   BASE GENRE CHIP
+================================ */
+.genre-chip input {
+    display: none;
+}
+
+.genre-chip span {
+    display: block;
+    padding: 13px 15px;
+    border-radius: 14px;
+
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.15);
+
+    font-size: 13px;
+    color: #e9d5ff;
+
+    transition: all 0.25s ease;
+}
+
+/* ===============================
+   PER-GENRE GLOW COLORS
+================================ */
+
+/* ACTION – RED */
+input[value="Action"]:checked + span {
+    box-shadow: 0 0 25px rgba(239,68,68,0.9), 0 0 70px rgba(239,68,68,0.6);
+    border-color: rgb(239,68,68);
+    background: rgba(239,68,68,0.35);
+}
+
+/* COMEDY – YELLOW */
+input[value="Comedy"]:checked + span {
+    box-shadow: 0 0 25px rgba(250,204,21,0.9), 0 0 70px rgba(250,204,21,0.6);
+    border-color: rgb(250,204,21);
+    background: rgba(250,204,21,0.35);
+}
+
+/* DRAMA – PURPLE */
+input[value="Drama"]:checked + span {
+    box-shadow: 0 0 25px rgba(168,85,247,0.9), 0 0 70px rgba(168,85,247,0.6);
+    border-color: rgb(168,85,247);
+    background: rgba(168,85,247,0.35);
+}
+
+/* ROMANCE – PINK */
+input[value="Romance"]:checked + span {
+    box-shadow: 0 0 25px rgba(236,72,153,0.9), 0 0 70px rgba(236,72,153,0.6);
+    border-color: rgb(236,72,153);
+    background: rgba(236,72,153,0.35);
+}
+
+/* HORROR – GREEN */
+input[value="Horror"]:checked + span {
+    box-shadow: 0 0 25px rgba(34,197,94,0.9), 0 0 70px rgba(34,197,94,0.6);
+    border-color: rgb(34,197,94);
+    background: rgba(34,197,94,0.35);
+}
+
+/* SCI-FI – CYAN */
+input[value="Sci-Fi"]:checked + span {
+    box-shadow: 0 0 25px rgba(56,189,248,0.9), 0 0 70px rgba(56,189,248,0.6);
+    border-color: rgb(56,189,248);
+    background: rgba(56,189,248,0.35);
+}
+
+/* FANTASY – INDIGO */
+input[value="Fantasy"]:checked + span {
+    box-shadow: 0 0 25px rgba(99,102,241,0.9), 0 0 70px rgba(99,102,241,0.6);
+    border-color: rgb(99,102,241);
+    background: rgba(99,102,241,0.35);
+}
+
+/* ANIMATION – ORANGE */
+input[value="Animation"]:checked + span {
+    box-shadow: 0 0 25px rgba(249,115,22,0.9), 0 0 70px rgba(249,115,22,0.6);
+    border-color: rgb(249,115,22);
+    background: rgba(249,115,22,0.35);
+}
+
+/* THRILLER – TEAL */
+input[value="Thriller"]:checked + span {
+    box-shadow: 0 0 25px rgba(20,184,166,0.9), 0 0 70px rgba(20,184,166,0.6);
+    border-color: rgb(20,184,166);
+    background: rgba(20,184,166,0.35);
+}
+
+/* ===============================
+   BUTTON
+================================ */
+button {
+    width: 100%;
+    padding: 16px;
+    border-radius: 16px;
+    border: none;
+    background: linear-gradient(135deg, #7c3aed, #db2777);
+    color: white;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+
+    box-shadow:
+        0 0 30px rgba(219,39,119,0.6),
+        0 30px 90px rgba(124,58,237,0.7);
+
+    transition: all 0.25s ease;
+}
+
+button:hover {
+    transform: translateY(-3px);
+    box-shadow:
+        0 0 45px rgba(219,39,119,0.9),
+        0 45px 120px rgba(124,58,237,0.9);
+}
+/* ===============================
+   STAR PARTICLE LAYERS
+================================ */
+body::before,
+body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background-repeat: repeat;
+    pointer-events: none;
+}
+
+/* FAR STARS (small, slow) */
+body::before {
+    background-image:
+        radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.35) 50%, transparent 51%),
+        radial-gradient(1px 1px at 80% 70%, rgba(255,255,255,0.25) 50%, transparent 51%),
+        radial-gradient(1px 1px at 50% 90%, rgba(255,255,255,0.2) 50%, transparent 51%),
+        radial-gradient(1px 1px at 10% 60%, rgba(255,255,255,0.15) 50%, transparent 51%);
+    background-size: 600px 600px;
+    animation: starsFar 120s linear infinite;
+}
+
+/* NEAR STARS (slightly larger, faster) */
+body::after {
+    background-image:
+        radial-gradient(1.5px 1.5px at 30% 20%, rgba(255,255,255,0.6) 50%, transparent 51%),
+        radial-gradient(1.5px 1.5px at 70% 50%, rgba(255,255,255,0.5) 50%, transparent 51%),
+        radial-gradient(1.5px 1.5px at 40% 80%, rgba(255,255,255,0.4) 50%, transparent 51%),
+        radial-gradient(1.5px 1.5px at 90% 30%, rgba(255,255,255,0.35) 50%, transparent 51%);
+    background-size: 400px 400px;
+    animation: starsNear 60s linear infinite;
+}
+@keyframes starsFar {
+    from { transform: translateZ(-200px) translateY(0); }
+    to   { transform: translateZ(-200px) translateY(-2000px); }
+}
+
+@keyframes starsNear {
+    from { transform: translateZ(0px) translateY(0); }
+    to   { transform: translateZ(0px) translateY(-2000px); }
+}
+body::marker { display: none; }
+
+.genre-wrapper::before {
+    content: "";
+    position: absolute;
+    inset: -200px;
+    background: radial-gradient(
+        circle at center,
+        rgba(255,255,255,0.04),
+        transparent 70%
+    );
+    pointer-events: none;
+    animation: fogMove 20s ease-in-out infinite alternate;
+}
+
+@keyframes fogMove {
+    from { transform: scale(1) translateY(0); }
+    to   { transform: scale(1.15) translateY(-60px); }
 }
