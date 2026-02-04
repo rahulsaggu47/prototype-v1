@@ -207,7 +207,19 @@ searchInput.addEventListener("input", function () {
 });
 
 function runSearch(query) {
-    if (!query) return;
+    const container = document.getElementById("contentGrid");
+
+    // 🔹 if search cleared → clear results
+    if (!query) {
+        container.classList.add("clearing");
+
+        setTimeout(() => {
+            container.innerHTML = "";
+            container.classList.remove("clearing");
+        }, 200);
+
+        return;
+    }
 
     const params = new URLSearchParams({
         q: query,
@@ -218,6 +230,7 @@ function runSearch(query) {
         .then(res => res.json())
         .then(data => renderResults(data));
 }
+
 
 function highlightText(text, query) {
     if (!query) return text;
@@ -245,18 +258,31 @@ function renderResults(items) {
     items.forEach((item, index) => {
         const card = document.createElement("div");
         card.className = "content-card";
+        card.dataset.id = item.id;   // 👈 IMPORTANT
 
-        // 👇 stagger delay (very subtle)
+        // stagger delay
         card.style.setProperty("--delay", `${index * 40}ms`);
 
         card.innerHTML = `
             <img src="${item.poster_url}">
-            <h3>${item.title}</h3>
+            <h3>${highlightText(item.title, searchInput.value.trim())}</h3>
         `;
 
         container.appendChild(card);
     });
 }
+
+document.getElementById("contentGrid").addEventListener("click", (e) => {
+    const card = e.target.closest(".content-card");
+    if (!card) return;
+
+    const contentId = card.dataset.id;
+    if (!contentId) return;
+
+    window.location.href = `/content/${contentId}`;
+});
+
+
 
 let spotlightItems = [];
 let spotlightIndex = 0;
