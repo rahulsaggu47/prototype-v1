@@ -11,5 +11,35 @@
         {% block content %}{% endblock %}
     </main>
 
+    <div class="toast error-toast" id="loginToast">
+        🔒 Please log in to use favorites
+    </div>
+
+    <script>
+    function showLoginToast() {
+        const toast = document.getElementById("loginToast");
+        if (!toast) return;
+
+        toast.classList.add("show");
+
+        clearTimeout(window._loginToastTimer);
+        window._loginToastTimer = setTimeout(() => {
+            toast.classList.remove("show");
+        }, 3000);
+    }
+    </script>
+   
+   <script>
+    function triggerShake() {
+    const main = document.querySelector("main");
+    if (!main) return;
+
+    main.classList.remove("shake"); // reset if already shaking
+    void main.offsetWidth;          // force reflow
+    main.classList.add("shake");
+    }
+    </script>
+
 </body>
+
 </html>

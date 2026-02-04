@@ -161,6 +161,14 @@ body {
     color: #e5e7eb;
 }
 
+.toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 24px 0;
+}
+
+
 /* ===== SPOTLIGHT ===== */
 .spotlight {
     position: relative;
@@ -1050,4 +1058,72 @@ body {
 
 .content-card:hover::after {
     opacity: 1;
+}
+
+.error-toast {
+    border-left: 4px solid #ef4444;
+}
+
+
+@keyframes subtleShake {
+    0%   { transform: translateX(0); }
+    25%  { transform: translateX(-2px); }
+    50%  { transform: translateX(2px); }
+    75%  { transform: translateX(-2px); }
+    100% { transform: translateX(0); }
+}
+
+.shake {
+    animation: subtleShake 0.28s ease;
+}
+
+.fav-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 22px;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    font-size: 15px;
+    transition:
+        background 0.3s ease,
+        box-shadow 0.3s ease,
+        transform 0.15s ease;
+}
+
+.heart-icon {
+    display: inline-block;
+    transform: scale(1);
+    transition: transform 0.25s ease;
+}
+
+.fav-btn.active {
+    background: linear-gradient(135deg, #ef4444, #f97316);
+    color: white;
+    box-shadow: 0 12px 30px rgba(239, 68, 68, 0.45);
+}
+
+.fav-btn.active .heart-icon {
+    animation: heartPop 0.35s ease;
+}
+
+@keyframes heartPop {
+    0%   { transform: scale(0.8); }
+    60%  { transform: scale(1.25); }
+    100% { transform: scale(1); }
+}
+
+.heart-icon.animate {
+    animation: heartPop 0.35s ease;
+}
+
+@keyframes microPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.fav-btn.active {
+    animation: microPulse 0.2s ease;
 }

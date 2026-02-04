@@ -17,7 +17,8 @@
             id="fav-btn"
             data-content-id="{{ content.id }}"
             class="fav-btn">
-            ❤️ Add to Favorites
+            <span class="heart-icon">❤️</span>
+            <span class="fav-text">Add to Favorites</span>
         </button>
 
         <p class="description">{{ content.description }}</p>
@@ -44,11 +45,22 @@
     </div>
 </section>
 
+
 <script>
 const favBtn = document.getElementById("fav-btn");
 const contentId = favBtn.dataset.contentId;
-
 let isFavorite = false;
+
+// 🔹 initial status check
+fetch(`/api/favorites/status/${contentId}`)
+    .then(res => res.json())
+    .then(data => {
+        if (data.is_favorite) {
+            isFavorite = true;
+            favBtn.classList.add("active");
+            favBtn.textContent = "❤️ Remove from Favorites";
+        }
+    });
 
 favBtn.addEventListener("click", async () => {
     const url = isFavorite
@@ -57,26 +69,39 @@ favBtn.addEventListener("click", async () => {
 
     const response = await fetch(url, {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            user_id: userId,
-            content_id: contentId
-        })
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content_id: contentId })
     });
 
     const data = await response.json();
 
+    if (data.login_required) {
+        showLoginToast();
+        triggerShake();
+        return;
+    }
+
     if (data.success) {
         isFavorite = !isFavorite;
         favBtn.classList.toggle("active");
-        favBtn.textContent = isFavorite
-            ? "❤️ Remove from Favorites"
-            : "❤️ Add to Favorites";
+
+        const heart = favBtn.querySelector(".heart-icon");
+        const text = favBtn.querySelector(".fav-text");
+
+        // 🔥 force animation restart
+        heart.classList.remove("animate");
+        void heart.offsetWidth; // force reflow
+        heart.classList.add("animate");
+
+        text.textContent = isFavorite
+            ? "Remove from Favorites"
+            : "Add to Favorites";
     }
+
 });
 </script>
+
+
 
 
 {% endblock %}

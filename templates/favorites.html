@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+
+<link rel="stylesheet" href="{{ url_for('static', filename='css/favorites.css') }}">
+
+<section class="favorites-page">
+
+    <header class="favorites-header">
+        <h1>❤️ Your Favorites</h1>
+        <p>Everything you’ve saved, in one place</p>
+    </header>
+
+    <div class="favorites-filters">
+        <button data-type="all" class="active">All</button>
+        <button data-type="anime">Anime</button>
+        <button data-type="movie">Movies</button>
+    </div>
+
+    <div id="favoritesGrid" class="content-grid"></div>
+
+    <div id="favoritesEmpty" class="empty-state hidden">
+        <p>💔 No favorites yet</p>
+        <span>Save anime and movies you love, and they’ll show up here.</span>
+    </div>
+
+</section>
+
+<script src="{{ url_for('static', filename='js/favorites.js') }}"></script>
+
+{% endblock %}

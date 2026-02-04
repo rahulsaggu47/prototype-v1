@@ -83,19 +83,31 @@
 
 
 
-<div class="toggle-container">
-    <a
-        href="{{ url_for('home', type='anime') }}"
-        class="toggle-btn {% if content_type == 'anime' %}active{% endif %}">
-        Anime
-    </a>
+<div class="toggle-row">
+
+    <div class="toggle-container">
+        <a
+            href="{{ url_for('home', type='anime') }}"
+            class="toggle-btn {% if content_type == 'anime' %}active{% endif %}">
+            Anime
+        </a>
+
+        <a
+            href="{{ url_for('home', type='movie') }}"
+            class="toggle-btn {% if content_type == 'movie' %}active{% endif %}">
+            Movies
+        </a>
+    </div>
 
     <a
-        href="{{ url_for('home', type='movie') }}"
-        class="toggle-btn {% if content_type == 'movie' %}active{% endif %}">
-        Movies
+        href="{% if session.get('user_id') %}/favorites{% else %}/login{% endif %}"
+        class="toggle-btn active">
+        ❤️ Favorites
     </a>
+
 </div>
+
+
 
 <div class="reco-overlay" id="recommenderModal">
     <div class="reco-modal">
@@ -143,8 +155,8 @@
     <span class="toast-icon">🎉</span>
     <span>Preferences saved! We’ll tailor recommendations for you.</span>
 </div>
-{% endif %}
 
+{% endif %}
 
 
 

@@ -173,44 +173,70 @@ def api_content():
     results = db.execute(query, params).fetchall()
     return jsonify([dict(row) for row in results])
 
+@app.route("/favorites")
+def favorites_page():
+    if "user_id" not in session:
+        return redirect("/login")
+
+    return render_template("favorites.html")
+
 
 @app.route("/api/favorites/add", methods=["POST"])
 def api_add_favorite():
-    data = request.json
     user_id = session.get("user_id")
+    data = request.json
     content_id = data.get("content_id")
 
-    if not user_id or not content_id:
-        return jsonify({"error": "Missing user_id or content_id"}), 400
+    if not user_id:
+        return jsonify({"login_required": True}), 401
 
-    success = add_favorite(user_id, content_id)
+    if not content_id:
+        return jsonify({"error": "Missing content_id"}), 400
 
-    return jsonify({"success": success})
+    add_favorite(user_id, content_id)
+    return jsonify({"success": True})
+
 
 
 @app.route("/api/favorites/remove", methods=["POST"])
 def api_remove_favorite():
-    data = request.json
     user_id = session.get("user_id")
-    if not user_id:
-        return jsonify({"error": "Not logged in"}), 401
-
+    data = request.json
     content_id = data.get("content_id")
 
-    if not user_id or not content_id:
-        return jsonify({"error": "Missing user_id or content_id"}), 400
+    if not user_id:
+        return jsonify({"login_required": True}), 401
+
+    if not content_id:
+        return jsonify({"error": "Missing content_id"}), 400
 
     remove_favorite(user_id, content_id)
     return jsonify({"success": True})
 
 
-@app.route("/api/favorites")
-def api_get_favorites():
-    user_id = request.args.get("user_id")
-    content_type = request.args.get("type")  # optional: anime/movie
+@app.route("/api/favorites/status/<int:content_id>")
+def api_favorite_status(content_id):
+    user_id = session.get("user_id")
 
     if not user_id:
-        return jsonify({"error": "Missing user_id"}), 400
+        return jsonify({"is_favorite": False})
+
+    db = get_db()
+    fav = db.execute(
+        "SELECT 1 FROM favorites WHERE user_id = ? AND content_id = ?",
+        (user_id, content_id)
+    ).fetchone()
+
+    return jsonify({"is_favorite": bool(fav)})
+
+
+@app.route("/api/favorites")
+def api_get_favorites():
+    user_id = session.get("user_id")
+    content_type = request.args.get("type")  # anime / movie / all
+
+    if not user_id:
+        return jsonify({"login_required": True}), 401
 
     favorites = get_user_favorites(user_id, content_type)
     return jsonify([dict(row) for row in favorites])

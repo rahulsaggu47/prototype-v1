@@ -1,0 +1,68 @@
+.favorites-page {
+    padding: 40px;
+}
+
+.favorites-header {
+    margin-bottom: 20px;
+}
+
+.favorites-header h1 {
+    font-size: 28px;
+}
+
+.favorites-header p {
+    opacity: 0.7;
+}
+
+.favorites-filters {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 30px;
+}
+
+.favorites-filters button {
+    padding: 8px 16px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.06);
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.favorites-filters button.active {
+    background: linear-gradient(135deg, #6366f1, #9333ea);
+}
+
+.card-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 12px;
+    background: linear-gradient(
+        to top,
+        rgba(0,0,0,0.75),
+        rgba(0,0,0,0)
+    );
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-fav-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+}
+
+.fade-out {
+    opacity: 0;
+    transform: scale(0.95);
+    transition: all 0.25s ease;
+}
+
+.empty-state.hidden {
+    display: none;
+}
