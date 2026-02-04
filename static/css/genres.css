@@ -1,0 +1,132 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Inter", system-ui, sans-serif;
+}
+
+body {
+    min-height: 100vh;
+    background: radial-gradient(circle at top, #0f172a, #020617);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #e5e7eb;
+}
+
+.genre-wrapper {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+.genre-card {
+    width: 520px;
+    padding: 44px 42px;
+    border-radius: 18px;
+    background: rgba(8,12,25,0.85);
+    backdrop-filter: blur(16px);
+
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+
+    text-align: center;
+}
+
+.genre-card h1 {
+    font-size: 26px;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.subtitle {
+    font-size: 14px;
+    color: #9ca3af;
+    margin-bottom: 28px;
+}
+
+/* GRID */
+.genre-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 28px;
+}
+
+/* GENRE CHIP */
+.genre-chip {
+    position: relative;
+    cursor: pointer;
+}
+
+.genre-chip input {
+    display: none;
+}
+
+.genre-chip span {
+    display: block;
+    padding: 10px 12px;
+    border-radius: 10px;
+
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+
+    font-size: 13px;
+    color: #cbd5f5;
+    transition: all 0.15s ease;
+}
+
+/* SELECTED */
+.genre-chip input:checked + span {
+    background: rgba(56,189,248,0.18);
+    border-color: #38bdf8;
+    color: #ffffff;
+}
+
+/* BUTTON */
+button {
+    width: 100%;
+    padding: 14px;
+    border-radius: 12px;
+    border: none;
+
+    background: linear-gradient(135deg, #2563eb, #38bdf8);
+    color: white;
+
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+button:hover {
+    box-shadow: 0 14px 40px rgba(56,189,248,0.35);
+}
+
+
+/* ERROR MESSAGE */
+.genre-error {
+    margin-bottom: 18px;
+    padding: 12px 14px;
+    border-radius: 10px;
+
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    color: #fecaca;
+
+    font-size: 13px;
+    text-align: center;
+}
+
+/* SHAKE ANIMATION */
+.shake {
+    animation: shake 0.35s ease;
+}
+
+@keyframes shake {
+    0% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+    100% { transform: translateX(0); }
+}

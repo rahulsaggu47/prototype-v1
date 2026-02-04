@@ -1,0 +1,580 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+
+<header class="main-header">
+    <div class="logo">
+        Nextwatch
+    </div>
+
+<div class="search-container">
+    <form id="searchForm" class="search-box">
+        <input
+            type="text"
+            id="searchInput"
+            name="q"
+            placeholder="Search movies or anime..."
+            autocomplete="off"
+        >
+
+        <!-- CLEAR BUTTON -->
+        <button type="button" id="clearSearch" class="clear-btn">✕</button>
+
+        <!-- SEARCH BUTTON -->
+        <button type="submit" class="search-btn">🔍</button>
+    </form>
+
+</div>
+
+    <div class="auth-buttons">
+
+        <!-- 🎯 ALWAYS VISIBLE -->
+        <button class="recommend-btn" id="openRecommender">
+            🎯 Recommend
+        </button>
+
+        {% if session.get("user_id") %}
+            <span class="user-label">Hi 👋</span>
+            <a href="/logout" class="logout-btn">Logout</a>
+        {% else %}
+            <a href="/login">Login</a>
+            <a href="/signup" class="primary">Sign Up</a>
+        {% endif %}
+
+    </div>
+
+</header>
+
+
+<main class="page-content">
+
+    <div id="contentGrid" class="content-grid">
+        <!-- Search results / default content render here -->
+    </div>
+
+</main>
+
+
+<section class="spotlight" id="spotlight">
+    
+    <div class="spotlight-content">
+        <span class="spotlight-tag">#3 SPOTLIGHT</span>
+
+        <h1 class="spotlight-title" id="spotlightTitle">One Piece</h1>
+
+        <p class="spotlight-desc" id="spotlightDesc">
+            Gold Roger was known as the “Pirate King”...
+        </p>
+
+        <div class="spotlight-actions">
+            <a href="#" class="btn primary" id="watchBtn">▶ Watch Now</a>
+            <a href="#" class="btn secondary" id="detailsBtn">ⓘ View Details</a>
+        </div>
+    </div>
+
+    <div class="spotlight-poster">
+        <img id="spotlightPoster" src="..." />
+    </div>
+    <button class="spotlight-arrow left" id="spotlightPrev">‹</button>
+    <button class="spotlight-arrow right" id="spotlightNext">›</button>
+
+</section>
+
+
+
+<div class="toggle-container">
+    <a
+        href="{{ url_for('home', type='anime') }}"
+        class="toggle-btn {% if content_type == 'anime' %}active{% endif %}">
+        Anime
+    </a>
+
+    <a
+        href="{{ url_for('home', type='movie') }}"
+        class="toggle-btn {% if content_type == 'movie' %}active{% endif %}">
+        Movies
+    </a>
+</div>
+
+<div class="reco-overlay" id="recommenderModal">
+    <div class="reco-modal">
+        <button class="reco-close" id="closeRecommender">✕</button>
+
+        <div class="reco-bar">
+            <div id="progressFill"></div>
+        </div>
+
+        <div id="questionBox"></div>
+
+        <button class="reco-next" id="nextQuestion">Next</button>
+    </div>
+</div>
+
+
+<section class="section">
+    <h2>🔥 Trending</h2>
+
+    <div class="horizontal-row" id="trendingRow">
+        {% for item in trending %}
+            <a href="{{ url_for('content_detail', content_id=item.id) }}" class="card">
+                <img src="{{ item.poster_url }}" alt="{{ item.title }}">
+                <p>{{ item.title }}</p>
+            </a>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="section">
+    <h2>⭐ All-Time Popular</h2>
+
+    <div class="horizontal-row" id="popularRow">
+        {% for item in popular %}
+            <a href="{{ url_for('content_detail', content_id=item.id) }}" class="card">
+                <img src="{{ item.poster_url }}" alt="{{ item.title }}">
+                <p>{{ item.title }}</p>
+            </a>
+        {% endfor %}
+    </div>
+</section>
+
+{% if show_toast %}
+<div class="toast success-toast show" id="prefToast">
+    <span class="toast-icon">🎉</span>
+    <span>Preferences saved! We’ll tailor recommendations for you.</span>
+</div>
+{% endif %}
+
+
+
+
+<script>
+const searchForm = document.getElementById("searchForm");
+const searchInput = document.getElementById("searchInput");
+const clearBtn = document.getElementById("clearSearch");
+
+
+let debounceTimer = null;
+
+// show / hide clear button
+searchInput.addEventListener("input", () => {
+    clearBtn.style.display =
+        searchInput.value.length > 0 ? "block" : "none";
+});
+
+// clear button click
+clearBtn.addEventListener("click", () => {
+    const container = document.getElementById("contentGrid");
+
+    // start clear animation
+    container.classList.add("clearing");
+
+    // wait for animation to finish
+    setTimeout(() => {
+        container.innerHTML = "";
+        container.classList.remove("clearing");
+    }, 250);
+
+    // reset input + state
+    searchInput.value = "";
+    clearBtn.style.display = "none";
+
+    // optional: reset search state
+    currentSearchQuery = "";
+});
+
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && searchInput.value.trim()) {
+        clearBtn.click();
+        searchInput.blur(); // optional, feels nice
+    }
+});
+
+
+// 🔍 FORM SUBMIT (ENTER or BUTTON)
+searchForm.addEventListener("submit", function (e) {
+    e.preventDefault(); // stop page reload
+    runSearch(searchInput.value.trim());
+});
+
+// ⌨️ LIVE SEARCH (OPTIONAL BUT NICE)
+searchInput.addEventListener("input", function () {
+    clearTimeout(debounceTimer);
+
+    debounceTimer = setTimeout(() => {
+        runSearch(searchInput.value.trim());
+    }, 300);
+});
+
+function runSearch(query) {
+    if (!query) return;
+
+    const params = new URLSearchParams({
+        q: query,
+        type: "{{ content_type }}"
+    });
+
+    fetch(`/api/content?${params.toString()}`)
+        .then(res => res.json())
+        .then(data => renderResults(data));
+}
+
+function highlightText(text, query) {
+    if (!query) return text;
+
+    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(`(${escapedQuery})`, "gi");
+
+    return text.replace(
+        regex,
+        `<mark class="search-highlight">$1</mark>`
+    );
+}
+
+
+function renderResults(items) {
+    const container = document.getElementById("contentGrid");
+    container.innerHTML = "";
+
+    if (items.length === 0) {
+        container.innerHTML =
+            "<p class='no-results'>No results found</p>";
+        return;
+    }
+
+    items.forEach((item, index) => {
+        const card = document.createElement("div");
+        card.className = "content-card";
+
+        // 👇 stagger delay (very subtle)
+        card.style.setProperty("--delay", `${index * 40}ms`);
+
+        card.innerHTML = `
+            <img src="${item.poster_url}">
+            <h3>${item.title}</h3>
+        `;
+
+        container.appendChild(card);
+    });
+}
+
+let spotlightItems = [];
+let spotlightIndex = 0;
+const spotlightType = "{{ content_type }}";
+let spotlightTimer = null;
+
+fetch(`/api/spotlight?type=${spotlightType}`)
+    .then(res => res.json())
+    .then(data => {
+        spotlightItems = data;
+
+        if (spotlightItems.length > 0) {
+            renderSpotlight();
+            startAutoSlide();
+        }
+    });
+
+function renderSpotlight() {
+    const item = spotlightItems[spotlightIndex];
+
+    document.getElementById("spotlightTitle").textContent = item.title;
+    document.getElementById("spotlightDesc").textContent =
+        item.description?.slice(0, 200) + "...";
+
+    document.getElementById("spotlightPoster").src = item.poster_url;
+    document.getElementById("detailsBtn").href = `/content/${item.id}`;
+
+    const bgImage =
+        item.background_url && item.background_url.trim()
+            ? item.background_url
+            : item.poster_url;
+
+    const spotlight = document.getElementById("spotlight");
+    spotlight.style.backgroundImage = `url(${bgImage})`;
+}
+
+function updateSpotlight() {
+    renderSpotlight();
+
+    // Reset timer
+    clearInterval(spotlightTimer);
+    spotlightTimer = setInterval(nextSpotlight, 3500);
+}  
+
+
+function nextSpotlight() {
+    spotlightIndex =
+        (spotlightIndex + 1) % spotlightItems.length;
+    renderSpotlight();
+}
+
+function prevSpotlight() {
+    spotlightIndex =
+        (spotlightIndex - 1 + spotlightItems.length) %
+        spotlightItems.length;
+    renderSpotlight();
+}
+
+
+document.getElementById("spotlightNext").onclick = nextSpotlight;
+
+document.getElementById("spotlightPrev").onclick = prevSpotlight;
+
+// Auto slide
+spotlightTimer = setInterval(nextSpotlight, 3500);
+
+updateSpotlight();
+
+
+
+</script>
+<script>
+function autoScrollRow(rowId) {
+    const row = document.getElementById(rowId);
+    if (!row) return;
+
+    const scrollStep = 220; // card width + gap
+    let intervalId = null;
+
+    function startScroll() {
+        if (intervalId) return;
+
+        intervalId = setInterval(() => {
+            if (row.scrollLeft + row.clientWidth >= row.scrollWidth) {
+                row.scrollTo({ left: 0, behavior: "smooth" });
+            } else {
+                row.scrollBy({ left: scrollStep, behavior: "smooth" });
+            }
+        }, 3000);
+    }
+
+    function stopScroll() {
+        clearInterval(intervalId);
+        intervalId = null;
+    }
+
+    // start auto scroll
+    startScroll();
+
+    // pause on hover
+    row.addEventListener("mouseenter", stopScroll);
+    row.addEventListener("mouseleave", startScroll);
+}
+
+autoScrollRow("trendingRow");
+autoScrollRow("popularRow");
+</script>
+
+<div class="modal-overlay" id="recommenderModal">
+    <div class="modal-box">
+        <span class="close-modal" id="closeRecommender">&times;</span>
+        
+        <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+
+        <h2>Recommended for you</h2>
+        <p class="modal-sub">Answer a few questions to get a perfect pick</p>
+
+        <div id="questionBox"></div>
+
+        <button class="next-btn" id="nextQuestion">
+            Next
+        </button>
+    </div>
+</div>
+
+
+<script>
+const modal = document.getElementById("recommenderModal");
+const openBtn = document.getElementById("openRecommender");
+const closeBtn = document.getElementById("closeRecommender");
+const questionBox = document.getElementById("questionBox");
+const nextBtn = document.getElementById("nextQuestion");
+const progressFill = document.getElementById("progressFill");
+
+let currentQuestion = 0;
+let answers = [];
+
+const questions = [
+    {
+        q: "How are you feeling right now?",
+        options: ["Happy", "Sad", "Stressed", "Romantic"]
+    },
+    {
+        q: "What pace do you prefer?",
+        options: ["Fast", "Slow", "Balanced"]
+    },
+    {
+        q: "Choose a vibe",
+        options: ["Dark", "Light", "Inspirational"]
+    },
+    {
+        q: "Movie or Anime?",
+        options: ["Movie", "Anime", "Both"]
+    },
+    {
+        q: "Watch alone or with someone?",
+        options: ["Alone", "With friends", "With partner"]
+    }
+];
+
+function updateProgress() {
+    const percent = (currentQuestion / questions.length) * 100;
+    progressFill.style.width = percent + "%";
+}
+
+function renderQuestion() {
+    const q = questions[currentQuestion];
+
+    questionBox.innerHTML = `
+        <h3>${q.q}</h3>
+        <div class="reco-options">
+            ${q.options.map(opt =>
+                `<button class="reco-option">${opt}</button>`
+            ).join("")}
+        </div>
+    `;
+
+    // 🔒 disable next until user selects
+    nextBtn.disabled = true;
+
+    document.querySelectorAll(".reco-option").forEach(btn => {
+        btn.onclick = () => {
+            document
+                .querySelectorAll(".reco-option")
+                .forEach(b => b.classList.remove("active"));
+
+            btn.classList.add("active");
+            answers[currentQuestion] = btn.textContent;
+
+            // ✅ enable next when selected
+            nextBtn.disabled = false;
+            nextBtn.classList.add("enabled");
+        };
+    });
+}
+
+nextBtn.onclick = () => {
+    if (!answers[currentQuestion]) return;
+
+    currentQuestion++;
+    updateProgress();
+
+    if (currentQuestion < questions.length) {
+        renderQuestion();
+    } else {
+        showRecommendation();
+    }
+};
+
+function showRecommendation() {
+    const mood = answers[0];
+    const preference = answers[3];
+
+    let genres = [];
+    if (mood === "Sad") genres.push("drama");
+    if (mood === "Happy") genres.push("comedy");
+    if (mood === "Romantic") genres.push("romance");
+    if (mood === "Stressed") genres.push("fantasy");
+
+    const type =
+        preference === "Movie" ? "movie" :
+        preference === "Anime" ? "anime" :
+        "both";
+
+    fetch(`/api/recommend?genres=${genres.join(",")}&type=${type}`)
+        .then(res => res.json())
+        .then(data => renderRecommendation(data));
+}
+
+function renderRecommendation(items) {
+    if (!items || !items.length) {
+        questionBox.innerHTML = "<p>No recommendation found 😔</p>";
+        nextBtn.style.display = "none";
+        return;
+    }
+
+    const item = items[0];
+
+    questionBox.innerHTML = `
+        <div class="reco-result">
+            <div class="reco-poster">
+                <img src="${item.poster_url}" alt="${item.title}">
+            </div>
+
+            <div class="reco-info">
+                <h2>✨ Recommended for you</h2>
+                <h3>${item.title}</h3>
+                <p>${item.description.slice(0, 180)}...</p>
+
+                <div class="reco-actions">
+                    <a href="/content/${item.id}" class="reco-btn primary">
+                        View Details
+                    </a>
+
+                    <button class="reco-btn ghost" onclick="restartRecommender()">
+                        🔁 Try Again
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+
+    nextBtn.style.display = "none";
+}
+
+/* OPEN / CLOSE */
+openBtn.onclick = () => {
+    modal.classList.add("active");
+    currentQuestion = 0;
+    answers = [];
+    nextBtn.style.display = "block";
+    nextBtn.disabled = true;
+    updateProgress();
+    renderQuestion();
+};
+
+
+closeBtn.onclick = () => {
+    modal.classList.remove("active");
+};
+
+function restartRecommender() {
+    currentQuestion = 0;
+    answers = [];
+
+    // reset progress bar
+    updateProgress();
+
+    // show next button again
+    nextBtn.style.display = "block";
+    nextBtn.disabled = true;
+    nextBtn.classList.remove("enabled");
+
+    // render first question
+    renderQuestion();
+}
+
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const toast = document.getElementById("prefToast");
+    if (toast) {
+        setTimeout(() => {
+            toast.classList.add("show");
+        }, 200);
+
+        setTimeout(() => {
+            toast.classList.remove("show");
+        }, 3500);
+    }
+});
+</script>
+
+
+{% endblock %}

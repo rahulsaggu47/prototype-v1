@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sign Up • Nextwatch</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/signup.css') }}">
+</head>
+<body>
+
+<!-- 3D BACKGROUND -->
+<div class="bg-3d-signup">
+    <span></span>
+    <span></span>
+    <span></span>
+</div>
+
+<!-- SIGNUP FORM -->
+<div class="signup-wrapper">
+    <div class="signup-card">
+        <h1>Create Account</h1>
+        <p class="subtitle">Join Nextwatch and discover your taste</p>
+
+        {% if error %}
+        <div class="auth-error">{{ error }}</div>
+        {% endif %}
+
+        <form method="POST">
+            <input type="text" name="username" placeholder="Username" required>
+            <input type="email" name="email" placeholder="Email address" required>
+            <input type="password" name="password" placeholder="Password" required>
+            <!-- <input type="password" name="confirm_password" placeholder="Confirm password" required> -->
+
+            <button type="submit">Create Account</button>
+        </form>
+
+        <p class="footer-text">
+            Already have an account?
+            <a href="/login">Login</a>
+        </p>
+    </div>
+</div>
+
+</body>
+</html>

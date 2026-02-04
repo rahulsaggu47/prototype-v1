@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<section class="detail-hero"
+    style="background-image: url('{{ content.background_url }}');">
+</section>
+
+<section class="detail-container">
+    <div class="detail-poster">
+        <img src="{{ content.poster_url }}" alt="{{ content.title }}">
+    </div>
+
+    <div class="detail-info">
+        <h1>{{ content.title }}</h1>
+        <button
+            id="fav-btn"
+            data-content-id="{{ content.id }}"
+            class="fav-btn">
+            ❤️ Add to Favorites
+        </button>
+
+        <p class="description">{{ content.description }}</p>
+
+        <p><strong>Release Year:</strong> {{ content.release_year }}</p>
+
+        {% if content.type == 'anime' %}
+            <p><strong>Episodes:</strong> {{ content.episodes }}</p>
+        {% else %}
+            <p><strong>Duration:</strong> {{ content.duration }} mins</p>
+        {% endif %}
+
+        <p><strong>Genres:</strong> {{ content.genres }}</p>
+
+        {% if content.trailer_url %}
+            <iframe
+                width="560"
+                height="315"
+                src="{{ content.trailer_url }}"
+                frameborder="0"
+                allowfullscreen>
+            </iframe>
+        {% endif %}
+    </div>
+</section>
+
+<script>
+const favBtn = document.getElementById("fav-btn");
+const contentId = favBtn.dataset.contentId;
+
+let isFavorite = false;
+
+favBtn.addEventListener("click", async () => {
+    const url = isFavorite
+        ? "/api/favorites/remove"
+        : "/api/favorites/add";
+
+    const response = await fetch(url, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            user_id: userId,
+            content_id: contentId
+        })
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+        isFavorite = !isFavorite;
+        favBtn.classList.toggle("active");
+        favBtn.textContent = isFavorite
+            ? "❤️ Remove from Favorites"
+            : "❤️ Add to Favorites";
+    }
+});
+</script>
+
+
+{% endblock %}
