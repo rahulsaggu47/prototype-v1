@@ -196,11 +196,11 @@ input[value="Thriller"]:checked + span {
     border-color: rgb(20,184,166);
     background: rgba(20,184,166,0.35);
 }
-/* adventure – TEAL */
-input[value="adventure"]:checked + span {
-    box-shadow: 0 0 25px rgba(5, 26, 96, 0.9), 0 0 70px rgba(20,184,166,0.6);
-    border-color: rgb(20,184,166);
-    background: rgba(20,184,166,0.35);
+/* Adventure – TEAL */
+input[value="Adventure"]:checked + span {
+    box-shadow: 0 0 25px rgba(122, 9, 133, 0.9), 0 0 70px rgba(135, 15, 146, 0.6);
+    border-color: rgb(18, 20, 16);
+    background: rgba(16, 1, 10, 0.35);
 }
 
 
