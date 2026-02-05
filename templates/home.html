@@ -126,6 +126,19 @@
 
 
 <section class="section">
+
+        {% if session.get("user_id") %}
+    <section class="recommended-section hidden" id="recommendedSection">
+        <h2>✨ Recommended for You</h2>
+
+        <div class="horizontal-row" id="recommendedRow">
+            <!-- cards injected here -->
+        </div>
+    </section>
+
+    {% endif %}
+
+
     <h2>🔥 Trending</h2>
 
     <div class="horizontal-row" id="trendingRow">
@@ -368,6 +381,47 @@ updateSpotlight();
 
 </script>
 <script>
+
+document.addEventListener("DOMContentLoaded", () => {
+    fetchRecommended();
+});
+
+function fetchRecommended() {
+    fetch(`/api/recommended?type={{ content_type }}`)
+        .then(res => res.json())
+        .then(items => {
+            renderRecommended(items);
+
+            // 🔥 start auto-scroll ONLY after cards exist
+            autoScrollRow("recommendedRow");
+        });
+}
+
+function renderRecommended(items) {
+    const row = document.getElementById("recommendedRow");
+    const section = document.getElementById("recommendedSection");
+
+    if (!items || items.length === 0) return;
+
+    section.classList.remove("hidden");
+    row.innerHTML = "";
+
+    items.forEach(item => {
+        const card = document.createElement("a");
+        card.href = `/content/${item.id}`;
+        card.className = "card";
+
+        card.innerHTML = `
+            <img src="${item.poster_url}" alt="${item.title}">
+            <p>${item.title}</p>
+        `;
+
+        row.appendChild(card);
+    });
+}
+
+
+
 function autoScrollRow(rowId) {
     const row = document.getElementById(rowId);
     if (!row) return;
@@ -402,6 +456,8 @@ function autoScrollRow(rowId) {
 
 autoScrollRow("trendingRow");
 autoScrollRow("popularRow");
+autoScrollRow("recommendedRow");
+
 </script>
 
 <div class="modal-overlay" id="recommenderModal">
@@ -614,6 +670,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 </script>
+
 
 
 {% endblock %}

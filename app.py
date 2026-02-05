@@ -302,6 +302,50 @@ def api_recommend():
     result = db.execute(query, params).fetchall()
     return jsonify([dict(r) for r in result])
 
+@app.route("/api/recommended")
+def api_recommended():
+    user_id = session.get("user_id")
+    content_type = request.args.get("type", "anime")
+
+    if not user_id:
+        return jsonify([])
+
+    db = get_db()
+
+    # get user preferred genres
+    user = db.execute(
+        "SELECT preferred_genres FROM users WHERE id = ?",
+        (user_id,)
+    ).fetchone()
+
+    if not user or not user["preferred_genres"]:
+        return jsonify([])
+
+    genres = [g.strip() for g in user["preferred_genres"].split(",")]
+
+    # build genre conditions
+    genre_conditions = " OR ".join(["c.genres LIKE ?"] * len(genres))
+    genre_params = [f"%{g}%" for g in genres]
+
+    query = f"""
+        SELECT c.*
+        FROM content c
+        WHERE c.type = ?
+        AND ({genre_conditions})
+        AND c.id NOT IN (
+            SELECT content_id
+            FROM favorites
+            WHERE user_id = ?
+        )
+        ORDER BY RANDOM()
+        LIMIT 10
+    """
+
+    params = [content_type, *genre_params, user_id]
+
+    results = db.execute(query, params).fetchall()
+    return jsonify([dict(row) for row in results])
+
 
 if __name__ == "__main__":
     app.run(debug=True)

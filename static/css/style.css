@@ -994,6 +994,10 @@ body {
     transform: translateX(-50%) translateY(0);
 }
 
+.error-toast {
+    border-left: 4px solid #ef4444;
+}
+
 .success-toast {
     border-left: 4px solid #6366f1; /* blue-purple accent */
 }
@@ -1023,6 +1027,18 @@ body {
         transform: scale(1);
         opacity: 1;
     }
+}
+
+@keyframes subtleShake {
+    0%   { transform: translateX(0); }
+    25%  { transform: translateX(-2px); }
+    50%  { transform: translateX(2px); }
+    75%  { transform: translateX(-2px); }
+    100% { transform: translateX(0); }
+}
+
+.shake {
+    animation: subtleShake 0.28s ease;
 }
 
 
@@ -1462,7 +1478,35 @@ body {
     }
 }
 
+.recommended-section {
+    margin-bottom: 40px;
+}
 
+.hidden {
+    display: none;
+}
+
+.content-row {
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    padding-bottom: 10px;
+}
+
+.content-card {
+    min-width: 180px;   /* or whatever Trending uses */
+    max-width: 180px;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #020617;
+}
+
+.content-card img {
+    width: 100%;
+    height: 260px;      /* SAME as Trending */
+    object-fit: cover;
+    display: block;
+}
 
 
 
