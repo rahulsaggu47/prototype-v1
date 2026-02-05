@@ -6,7 +6,10 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/header.css') }}">
 </head>
+
 <body>
+
+<!-- ================= SPLASH SCREEN ================= -->
 <div id="splash-screen">
     <div class="stars"></div>
     <div class="stars layer2"></div>
@@ -17,21 +20,14 @@
     </div>
 </div>
 
-</div>
-
-
-
-<audio id="intro-sound" preload="auto" muted>
+<!-- ================= AUDIO ================= -->
+<audio id="intro-sound" preload="auto">
     <source src="{{ url_for('static', filename='sounds/intro.mp3') }}" type="audio/mpeg">
 </audio>
 
-
-
- </div>
-
-    <main>
-        {% block content %}{% endblock %}
-    </main>
+<main>
+    {% block content %}{% endblock %}
+</main>
 
 <div class="toast error-toast" id="loginToast">
     🔒 Please log in to use favorites
@@ -43,21 +39,39 @@
 
 <script>
 /* ===============================
-   SPLASH CONTROL (ONCE)
+   SPLASH & AUDIO CONTROL (FIXED)
 ================================ */
+
+const splash = document.getElementById("splash-screen");
+const audio = document.getElementById("intro-sound");
 
 // show splash only once per session
 if (!sessionStorage.getItem("splashShown")) {
     sessionStorage.setItem("splashShown", "true");
 
-    // remove splash after animation
+    // play audio ONLY ONCE, ONLY DURING SPLASH
+    if (!sessionStorage.getItem("introPlayed")) {
+        const startAudioOnce = () => {
+            audio.volume = 0.5;
+            audio.play().catch(() => {});
+            sessionStorage.setItem("introPlayed", "true");
+
+            // remove listener after first interaction
+            document.removeEventListener("pointerdown", startAudioOnce);
+        };
+
+        document.addEventListener("pointerdown", startAudioOnce);
+    }
+
+    // remove splash + stop audio
     setTimeout(() => {
-        const splash = document.getElementById("splash-screen");
         if (splash) splash.remove();
+        audio.pause();
+        audio.currentTime = 0;
     }, 3800);
+
 } else {
-    // remove immediately if already seen
-    const splash = document.getElementById("splash-screen");
+    // splash already seen → remove immediately
     if (splash) splash.remove();
 }
 
