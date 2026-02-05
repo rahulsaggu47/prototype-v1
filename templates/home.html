@@ -57,7 +57,20 @@
 
 
 <section class="spotlight" id="spotlight">
-    
+
+    <!-- 🎬 VIDEO BACKGROUND -->
+    <video
+        class="spotlight-video"
+        id="spotlightVideo"
+        autoplay
+        muted
+        loop
+        playsinline>
+    </video>
+
+    <!-- DARK OVERLAY -->
+    <div class="spotlight-overlay"></div>
+
     <div class="spotlight-content">
         <span class="spotlight-tag">#3 SPOTLIGHT</span>
 
@@ -76,10 +89,12 @@
     <div class="spotlight-poster">
         <img id="spotlightPoster" src="..." />
     </div>
+
     <button class="spotlight-arrow left" id="spotlightPrev">‹</button>
     <button class="spotlight-arrow right" id="spotlightNext">›</button>
 
 </section>
+
 
 
 
@@ -326,6 +341,13 @@ fetch(`/api/spotlight?type=${spotlightType}`)
         }
     });
 
+const spotlightVideoMap = {
+    1: "/static/videos/frieren.mp4",
+    5: "/static/videos/gintama.mp4",
+    12: "/static/videos/onepiece.mp4"
+};
+
+
 function renderSpotlight() {
     const item = spotlightItems[spotlightIndex];
 
@@ -336,13 +358,27 @@ function renderSpotlight() {
     document.getElementById("spotlightPoster").src = item.poster_url;
     document.getElementById("detailsBtn").href = `/content/${item.id}`;
 
-    const bgImage =
-        item.background_url && item.background_url.trim()
-            ? item.background_url
-            : item.poster_url;
-
     const spotlight = document.getElementById("spotlight");
-    spotlight.style.backgroundImage = `url(${bgImage})`;
+    const video = document.getElementById("spotlightVideo");
+
+    // 🎬 VIDEO LOGIC
+    if (item.video_url && item.video_url.trim()) {
+        video.src = item.video_url;
+        video.load();
+        video.play().catch(() => {});
+        spotlight.classList.add("has-video");
+    } else {
+        video.pause();
+        video.removeAttribute("src");
+        spotlight.classList.remove("has-video");
+
+        const bgImage =
+            item.background_url && item.background_url.trim()
+                ? item.background_url
+                : item.poster_url;
+
+        spotlight.style.backgroundImage = `url(${bgImage})`;
+    }
 }
 
 function updateSpotlight() {

@@ -131,13 +131,30 @@ def logout():
     session.clear()
     return redirect("/")
 
+SPOTLIGHT_VIDEO_MAP = {
+    1:"/static/videos/frieren.mp4",
+    5: "/static/videos/frieren_s2.mp4",
+    6: "/static/videos/chainsaw_man.mp4"
+}
+
+
 @app.route("/api/spotlight")
 def api_spotlight():
     content_type = request.args.get("type", "anime")
 
     spotlight_items = get_spotlight_content(content_type)
 
-    return jsonify([dict(row) for row in spotlight_items])
+    result = []
+    for row in spotlight_items:
+        item = dict(row)
+
+        # 🎬 attach video if available
+        item["video_url"] = SPOTLIGHT_VIDEO_MAP.get(item["id"])
+
+        result.append(item)
+
+    return jsonify(result)
+
 
 
 @app.route("/api/content")
