@@ -72,7 +72,7 @@
     <div class="spotlight-overlay"></div>
 
     <div class="spotlight-content">
-        <span class="spotlight-tag">#3 SPOTLIGHT</span>
+        <span class="spotlight-tag" id="spotlightIndexText">#1 SPOTLIGHT</span>
 
         <h1 class="spotlight-title" id="spotlightTitle">One Piece</h1>
 
@@ -363,6 +363,9 @@ const spotlightVideoMap = {
 
 function renderSpotlight() {
     const item = spotlightItems[spotlightIndex];
+
+    document.getElementById("spotlightIndexText").textContent =
+    `#${spotlightIndex + 1} SPOTLIGHT`;
 
     document.getElementById("spotlightTitle").textContent = item.title;
     document.getElementById("spotlightDesc").textContent =
