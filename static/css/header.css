@@ -247,3 +247,52 @@ mark.search-highlight {
     transform: translateY(6px);
     animation: fadeInUp 0.3s ease forwards;
 }
+.logo-container {
+    display: flex;
+    align-items: center;
+    cursor: default;
+}
+
+.logo-svg {
+    width: 180px;
+    height: auto;
+}
+
+/* NEXT */
+.logo-next {
+    font-size: 50px;
+    font-weight: 700;
+    fill: white;
+    letter-spacing: 1px;
+    opacity: 0;
+    animation: fadeSlide 1s ease forwards;
+}
+
+/* WATCH */
+.logo-watch {
+    font-size: 50px;
+    font-weight: 700;
+    fill: url(#watchGradient);
+    filter: url(#glow);
+    opacity: 0;
+    animation: fadeSlide 1s ease forwards;
+    animation-delay: 0.3s;
+}
+
+/* ANIMATION */
+@keyframes fadeSlide {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* HOVER GLOW */
+.logo-container:hover .logo-watch {
+    filter: drop-shadow(0 0 18px rgba(236, 72, 153, 0.8));
+    transition: 0.3s ease;
+}
