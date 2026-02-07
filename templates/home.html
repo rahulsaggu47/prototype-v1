@@ -30,6 +30,11 @@
 
 
 <div class="search-container">
+
+    {% if is_admin %}
+        <a href="/admin" class="admin-btn" title="Admin Panel">🛠</a>
+    {% endif %}
+
     <form id="searchForm" class="search-box">
         <input
             type="text"

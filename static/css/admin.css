@@ -1,0 +1,57 @@
+body {
+  margin: 0;
+  font-family: system-ui;
+  background: #0f172a;
+  color: #e5e7eb;
+}
+
+.admin-layout {
+  display: flex;
+  height: 100vh;
+}
+
+.admin-sidebar {
+  width: 220px;
+  background: #020617;
+  padding: 20px;
+}
+
+.admin-sidebar h2 {
+  margin-bottom: 20px;
+}
+
+.admin-sidebar a {
+  display: block;
+  margin-bottom: 12px;
+  color: #c7d2fe;
+  text-decoration: none;
+}
+
+.admin-sidebar a:hover {
+  color: #fff;
+}
+
+.admin-content {
+  flex: 1;
+  padding: 30px;
+}
+
+.spotlight-form {
+  max-width: 500px;
+}
+
+.spotlight-slot {
+  margin-bottom: 20px;
+}
+
+.spotlight-slot label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.spotlight-slot select {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+}

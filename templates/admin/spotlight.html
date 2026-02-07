@@ -1,0 +1,29 @@
+{% extends "admin/dashboard.html" %}
+{% block content %}
+
+<h1>Spotlight Manager</h1>
+<p>Select 3 items to appear on the home spotlight.</p>
+
+<form method="POST" class="spotlight-form">
+
+  {% for pos in [1,2,3] %}
+  <div class="spotlight-slot">
+    <label>Spotlight #{{ pos }}</label>
+
+    <select name="spotlight_{{ pos }}">
+      <option value="">— None —</option>
+
+      {% for item in content %}
+      <option value="{{ item.id }}"
+        {% if spotlight_map.get(pos) == item.id %}selected{% endif %}>
+        {{ item.title }} ({{ item.type }})
+      </option>
+      {% endfor %}
+    </select>
+  </div>
+  {% endfor %}
+
+  <button class="btn primary">Save Spotlight</button>
+</form>
+
+{% endblock %}
