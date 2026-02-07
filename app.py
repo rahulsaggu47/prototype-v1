@@ -46,33 +46,42 @@ def admin_spotlight():
     if "user_id" not in session or not is_admin():
         return redirect("/login")
 
-    conn = get_db()
-    cur = conn.cursor()
+    db = get_db()
 
     if request.method == "POST":
-        cur.execute("DELETE FROM spotlight")
+        db.execute("DELETE FROM spotlight")
 
-        for pos in [1, 2, 3]:
-            cid = request.form.get(f"spotlight_{pos}")
-            if cid:
-                cur.execute(
-                    "INSERT INTO spotlight (position, content_id) VALUES (?, ?)",
-                    (pos, cid)
-                )
+        for content_type in ["anime", "movie"]:
+            for pos in [1, 2, 3]:
+                cid = request.form.get(f"{content_type}_spotlight_{pos}")
+                if cid:
+                    db.execute("""
+                        INSERT INTO spotlight (type, position, content_id)
+                        VALUES (?, ?, ?)
+                    """, (content_type, pos, cid))
 
-        conn.commit()
+        db.commit()
         return redirect("/admin/spotlight")
 
-    cur.execute("SELECT id, title, type FROM content ORDER BY title")
-    all_content = cur.fetchall()
+    content = db.execute("""
+        SELECT id, title, type FROM content ORDER BY title
+    """).fetchall()
 
-    spotlight_map = get_spotlight_map()
+    spotlight_rows = db.execute("""
+        SELECT type, position, content_id FROM spotlight
+    """).fetchall()
+
+    spotlight_map = {
+        (row["type"], row["position"]): row["content_id"]
+        for row in spotlight_rows
+    }
 
     return render_template(
         "admin/spotlight.html",
-        content=all_content,
+        content=content,
         spotlight_map=spotlight_map
     )
+
 
 
 @app.route("/signup", methods=["GET", "POST"])
@@ -198,6 +207,10 @@ SPOTLIGHT_VIDEO_MAP = {
     203: "/static/videos/frieren_s2.mp4",
     204: "/static/videos/chainsaw_man.mp4",
     403: "/static/videos/dhurandhar.mp4",
+    234: "/static/videos/your_namr.mp4",
+    461: "/static/videos/shangchi.mp4",
+    265: "/static/videos/jjk_s2.mp4",
+    402: "/static/videos/3_idiots.mp4",
 }
 
 

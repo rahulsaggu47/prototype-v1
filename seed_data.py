@@ -12,7 +12,9 @@ OMDB_URL = "http://www.omdbapi.com/"
 
 
 MOVIE_TITLES = [
-    "inception"
+    "Oppenheimer",
+    "Barbie",
+    "shang-chi and the legend of the ten rings"
 ]
 
 
@@ -229,12 +231,12 @@ def seed_movies_from_omdb():
 
         cursor.execute("""
             INSERT INTO content (
-                title, type, description, release_year, genres,
-                poster_url, background_url, trailer_url,
-                rating, views_count, episodes, duration
+            title, type, description, release_year, genres,
+            poster_url, background_url, trailer_url,
+            rating, views_count, episodes, duration
             )
-            VALUES (?, 'movie', ?, ?, ?, ?, ?, NULL, ?, ?, NULL, ?)
-        """, (
+            VALUES (?, 'movie', ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?)
+            """, (
             data["Title"],
             description,
             release_year,
@@ -245,7 +247,8 @@ def seed_movies_from_omdb():
             rating,
             None,
             runtime
-        ))
+            ))
+
 
         print(f"✅ Added movie: {data['Title']}")
         added += 1

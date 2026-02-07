@@ -161,17 +161,17 @@ def save_user_genres(user_id, genres):
 def get_spotlight_content(content_type, limit=3):
     db = get_db()
 
-    # 1️⃣ Try admin-defined spotlight first
+    # 1️⃣ Admin-defined spotlight for this type
     rows = db.execute("""
         SELECT c.id, c.title, c.description, c.poster_url, c.background_url
         FROM spotlight s
         JOIN content c ON c.id = s.content_id
-        WHERE c.type = ?
+        WHERE s.type = ?
         ORDER BY s.position
         LIMIT ?
     """, (content_type, limit)).fetchall()
 
-    # 2️⃣ Fallback: rating-based spotlight (your old logic)
+    # 2️⃣ Fallback (your original behavior)
     if not rows:
         rows = db.execute("""
             SELECT id, title, description, poster_url, background_url
@@ -182,6 +182,7 @@ def get_spotlight_content(content_type, limit=3):
         """, (content_type, limit)).fetchall()
 
     return rows
+
 
 
 def get_spotlight_map():

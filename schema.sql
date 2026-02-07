@@ -54,7 +54,12 @@
 -- DELETE FROM content WHERE type = 'anime';
 -- DELETE FROM content WHERE type = 'movie';
 
--- CREATE TABLE IF NOT EXISTS spotlight (
---     position INTEGER PRIMARY KEY,
---     content_id INTEGER NOT NULL
+-- DROP TABLE IF EXISTS spotlight;
+
+-- CREATE TABLE spotlight (
+--     type TEXT NOT NULL,
+--     position INTEGER NOT NULL,
+--     content_id INTEGER NOT NULL,
+--     PRIMARY KEY (type, position)
 -- );
+
