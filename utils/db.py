@@ -158,6 +158,24 @@ def save_user_genres(user_id, genres):
     )
     db.commit()
 
+<<<<<<< HEAD
+def get_top_rated(content_type):
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT id, title, poster_url, rating
+        FROM content
+        WHERE type = ?
+        ORDER BY rating DESC
+        LIMIT 5
+    """, (content_type,))
+
+    data = cur.fetchall()
+    conn.close()
+    return data
+=======
+
 def get_spotlight_content(content_type, limit=3):
     db = get_db()
 
@@ -171,7 +189,8 @@ def get_spotlight_content(content_type, limit=3):
         LIMIT ?
     """, (content_type, limit)).fetchall()
 
-    # 2️⃣ Fallback (your original behavior)
+
+    # 2️⃣ Fallback: rating-based spotlight (your old logic)
     if not rows:
         rows = db.execute("""
             SELECT id, title, description, poster_url, background_url
@@ -190,3 +209,4 @@ def get_spotlight_map():
     cur = conn.cursor()
     cur.execute("SELECT position, content_id FROM spotlight")
     return {row["position"]: row["content_id"] for row in cur.fetchall()}
+>>>>>>> baa7bcc0cf4863320b528826635a0195193d3d5f

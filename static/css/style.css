@@ -1739,4 +1739,123 @@ body.light .theme-toggle {
 
 
 
+.rating-section {
+    margin-top: 40px;
+}
 
+.rating-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Main card */
+.rating-card {
+    display: grid;
+    grid-template-columns: 60px 90px 1fr 70px;
+    align-items: center;
+    background: linear-gradient(135deg, #0b122b, #121a3a);
+    border-radius: 16px;
+    padding: 14px 16px;
+    text-decoration: none;
+    color: #fff;
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.rating-card:hover {
+    transform: translateY(-2px);
+    background: linear-gradient(135deg, #121a3a, #1a2470);
+}
+
+/* Rank number (01, 02, 03…) */
+.rating-rank {
+    font-size: 32px;
+    font-weight: 800;
+    color: #5f6cff;
+    opacity: 0.9;
+}
+
+/* Poster */
+.rating-card img {
+    width: 75px;
+    height: 105px;
+    border-radius: 12px;
+    object-fit: cover;
+}
+
+/* Title area */
+.rating-info {
+    padding-left: 16px;
+}
+
+.rating-info h3 {
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+/* Rating number (9.6, 9.3…) */
+.rating-score {
+    font-size: 32px;
+    font-weight: 800;
+    text-align: right;
+    color: #f5c84c; /* gold like image */
+}
+
+/* Container */
+.rating-horizontal {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Big horizontal card */
+.rating-h-card {
+    display: grid;
+    grid-template-columns: 70px 140px 1fr 90px;
+    align-items: center;
+    padding: 18px 20px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #0c1435, #141f52);
+    color: #fff;
+    text-decoration: none;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.rating-h-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 40px rgba(79, 92, 255, 0.25);
+}
+
+/* Rank number */
+.rating-rank {
+    font-size: 36px;
+    font-weight: 800;
+    color: #6c7bff;
+}
+
+/* Big poster */
+.rating-h-card img {
+    width: 110px;
+    height: 150px;
+    border-radius: 14px;
+    object-fit: cover;
+}
+
+/* Title area */
+.rating-info {
+    padding-left: 20px;
+}
+
+.rating-info h3 {
+    font-size: 22px;
+    font-weight: 600;
+}
+
+/* Rating score */
+.rating-score {
+    font-size: 36px;
+    font-weight: 800;
+    color: #facc15;
+    text-align: right;
+}

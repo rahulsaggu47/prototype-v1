@@ -221,12 +221,38 @@
     </div>
 </section>
 
+<!-- ✅ TOP RATED (ALWAYS VISIBLE) -->
+<section class="section rating-section">
+    <h2>🏆 Top Rated</h2>
+
+    <div class="rating-horizontal">
+        {% for item in top_rated %}
+        <a href="{{ url_for('content_detail', content_id=item.id) }}"
+           class="rating-h-card">
+
+            <span class="rating-rank">0{{ loop.index }}</span>
+
+            <img src="{{ item.poster_url }}" alt="{{ item.title }}">
+
+            <div class="rating-info">
+                <h3>{{ item.title }}</h3>
+            </div>
+
+            <div class="rating-score">
+                {{ "%.1f"|format(item.rating) }}
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+
+
+<!-- ✅ TOAST (ONLY WHEN FLAG IS SET) -->
 {% if show_toast %}
 <div class="toast success-toast show" id="prefToast">
     <span class="toast-icon">🎉</span>
     <span>Preferences saved! We’ll tailor recommendations for you.</span>
 </div>
-
 {% endif %}
 
 
