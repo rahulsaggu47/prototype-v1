@@ -13,16 +13,71 @@ from utils.db import (
     get_user_favorites,
     save_user_genres,
     get_spotlight_content,
+<<<<<<< HEAD
     get_top_rated
+=======
+    get_spotlight_map
+>>>>>>> baa7bcc0cf4863320b528826635a0195193d3d5f
 )
 
 
 app = Flask(__name__)
 app.secret_key = "dev-secret-key"
 
+def is_admin():
+    return session.get("user_id") in [1, 25]
+
+@app.context_processor
+def inject_admin_flag():
+    return {
+        "is_admin": session.get("user_id") in [1, 25]
+    }
+
+
 @app.teardown_appcontext
 def teardown_db(exception):
     close_db()
+    
+@app.route("/admin")
+def admin_dashboard():
+    if "user_id" not in session or not is_admin():
+        return redirect("/login")
+
+    return render_template("admin/dashboard.html")
+
+@app.route("/admin/spotlight", methods=["GET", "POST"])
+def admin_spotlight():
+    if "user_id" not in session or not is_admin():
+        return redirect("/login")
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    if request.method == "POST":
+        cur.execute("DELETE FROM spotlight")
+
+        for pos in [1, 2, 3]:
+            cid = request.form.get(f"spotlight_{pos}")
+            if cid:
+                cur.execute(
+                    "INSERT INTO spotlight (position, content_id) VALUES (?, ?)",
+                    (pos, cid)
+                )
+
+        conn.commit()
+        return redirect("/admin/spotlight")
+
+    cur.execute("SELECT id, title, type FROM content ORDER BY title")
+    all_content = cur.fetchall()
+
+    spotlight_map = get_spotlight_map()
+
+    return render_template(
+        "admin/spotlight.html",
+        content=all_content,
+        spotlight_map=spotlight_map
+    )
+
 
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
@@ -145,7 +200,8 @@ def logout():
 SPOTLIGHT_VIDEO_MAP = {
     202:"/static/videos/frieren.mp4",
     203: "/static/videos/frieren_s2.mp4",
-    204: "/static/videos/chainsaw_man.mp4"
+    204: "/static/videos/chainsaw_man.mp4",
+    403: "/static/videos/dhurandhar.mp4",
 }
 
 

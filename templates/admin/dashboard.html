@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Admin Panel · NextWatch</title>
+    <link rel="stylesheet" href="/static/css/admin.css">
+</head>
+<body>
+
+<div class="admin-layout">
+
+    <aside class="admin-sidebar">
+        <h2>NextWatch</h2>
+        <a href="/admin">Dashboard</a>
+        <a href="/admin/spotlight">Spotlight</a>
+        <a href="/">← Back to App</a>
+    </aside>
+    
+    <main class="admin-content">
+        {% block content %}
+        <h1>Admin Dashboard</h1>
+        <p>Welcome. Choose an action from the sidebar.</p>
+        {% endblock %}
+    </main>
+
+
+</div>
+
+</body>
+</html>
