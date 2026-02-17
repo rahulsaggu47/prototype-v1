@@ -213,6 +213,7 @@ SPOTLIGHT_VIDEO_MAP = {
     402: "/static/videos/3_idiots.mp4",
     254: "/static/videos/love_is_war_movie.mp4",
     469: "/static/videos/tangled.mp4",
+    513: "/static/videos/thor.mp4"
 }
 
 

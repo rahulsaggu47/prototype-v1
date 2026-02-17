@@ -12,7 +12,7 @@ OMDB_URL = "http://www.omdbapi.com/"
 
 
 MOVIE_TITLES = [
-    "Kingsglaive: Final Fantasy XV"
+    "avengers infinity war"
 ]
 
 
