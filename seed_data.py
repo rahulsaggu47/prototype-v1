@@ -259,5 +259,5 @@ def seed_movies_from_omdb():
 
 
 if __name__ == "__main__":
-    # seed_anime_from_jikan()
-    seed_movies_from_omdb()
+    seed_anime_from_jikan()
+    # seed_movies_from_omdb()

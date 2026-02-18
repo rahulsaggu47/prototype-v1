@@ -201,9 +201,21 @@ def get_spotlight_content(content_type, limit=3):
     return rows
 
 
-
 def get_spotlight_map():
     conn = get_db()
     cur = conn.cursor()
     cur.execute("SELECT position, content_id FROM spotlight")
     return {row["position"]: row["content_id"] for row in cur.fetchall()}
+
+
+def get_admin_picks(admin_name, content_type, limit=10):
+    db = get_db()
+    return db.execute("""
+        SELECT c.*
+        FROM admins_picks ap
+        JOIN content c ON c.id = ap.content_id
+        WHERE ap.admin_name = ?
+        AND ap.type = ?
+        ORDER BY ap.position
+        LIMIT ?
+    """, (admin_name, content_type, limit)).fetchall()

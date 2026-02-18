@@ -55,3 +55,37 @@ body {
   padding: 10px;
   border-radius: 8px;
 }
+
+.pick-slot {
+  margin-bottom: 12px;
+}
+
+.pick-slot label {
+  display: inline-block;
+  width: 40px;
+  font-weight: 600;
+}
+
+.pick-slot select {
+  padding: 6px;
+  width: 300px;
+}
+
+.admin-picks-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+    align-items: start;
+}
+
+.admin-column {
+    background: rgba(255,255,255,0.03);
+    padding: 20px;
+    border-radius: 16px;
+}
+
+@media (max-width: 900px) {
+    .admin-picks-wrapper {
+        grid-template-columns: 1fr;
+    }
+}

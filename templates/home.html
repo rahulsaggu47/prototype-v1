@@ -221,30 +221,29 @@
     </div>
 </section>
 
-<!-- ✅ TOP RATED (ALWAYS VISIBLE) -->
-<section class="section rating-section">
-    <h2>🏆 Top Rated</h2>
+<!-- ⭐ ADMIN'S TOP PICKS -->
+<section class="section admins-top-picks">
 
-    <div class="rating-horizontal">
-        {% for item in top_rated %}
-        <a href="{{ url_for('content_detail', content_id=item.id) }}"
-           class="rating-h-card">
+    <h2>⭐ Admin’s Top Picks</h2>
 
-            <span class="rating-rank">0{{ loop.index }}</span>
+    <div class="curator-wrapper">
 
-            <img src="{{ item.poster_url }}" alt="{{ item.title }}">
+        <!-- Fate Panel -->
+        <div class="curator-panel fate-panel">
+            <h3>Rahul’s Picks</h3>
+            <div class="curator-list" id="fatePicks"></div>
+        </div>
 
-            <div class="rating-info">
-                <h3>{{ item.title }}</h3>
-            </div>
+        <!-- Akriti Panel -->
+        <div class="curator-panel akriti-panel">
+            <h3>Akriti’s Picks</h3>
+            <div class="curator-list" id="akritiPicks"></div>
+        </div>
 
-            <div class="rating-score">
-                {{ "%.1f"|format(item.rating) }}
-            </div>
-        </a>
-        {% endfor %}
     </div>
+
 </section>
+
 
 
 <!-- ✅ TOAST (ONLY WHEN FLAG IS SET) -->
@@ -832,6 +831,52 @@ toggle.addEventListener("click", () => {
     toggle.textContent =
         document.body.classList.contains("light") ? "☀️" : "🌙";
 });
+</script>
+
+
+<script>
+const pageType = "{{ content_type }}"; // anime or movie
+
+function loadAdminPicks(admin, containerId) {
+    fetch(`/api/admin-picks?admin=${admin}&type=${pageType}`)
+        .then(res => res.json())
+        .then(data => {
+            const container = document.getElementById(containerId);
+            container.innerHTML = "";
+
+            data.forEach((item, index) => {
+                const div = document.createElement("a");
+                div.href = `/content/${item.id}`;
+                div.className = "pick-item";
+
+                div.innerHTML = `
+                    <div class="pick-bg"
+                         style="background-image:url(${item.background_url || item.poster_url})">
+                    </div>
+                
+                    <div class="pick-overlay">
+                        <span class="pick-rank">#${index + 1}</span>
+                        <h4 class="pick-title">${item.title}</h4>
+                    
+                        <div class="pick-extra">
+                            <span class="pick-rating">
+                                ${item.rating ? item.rating.toFixed(1) + " ⭐" : ""}
+                            </span>
+                            <p class="pick-desc">
+                                ${item.description ? item.description.slice(0,120) + "..." : ""}
+                            </p>
+                        </div>
+                    </div>
+                `;
+
+
+                container.appendChild(div);
+            });
+        });
+}
+
+loadAdminPicks("fate", "fatePicks");
+loadAdminPicks("akriti", "akritiPicks");
 </script>
 
 

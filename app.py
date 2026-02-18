@@ -14,7 +14,8 @@ from utils.db import (
     save_user_genres,
     get_spotlight_content,
     get_top_rated,
-    get_spotlight_map
+    get_spotlight_map,
+    get_admin_picks
 )
 
 
@@ -451,6 +452,64 @@ def api_recommended():
     })
 
 
+@app.route("/api/admin-picks")
+def api_admin_picks():
+    admin_name = request.args.get("admin")
+    content_type = request.args.get("type")
+
+    if not admin_name or not content_type:
+        return jsonify([])
+
+    items = get_admin_picks(admin_name, content_type)
+    return jsonify([dict(row) for row in items])
+
+
+@app.route("/admin/picks", methods=["GET", "POST"])
+def admin_picks():
+    if "user_id" not in session or not is_admin():
+        return redirect("/login")
+
+    db = get_db()
+
+    if request.method == "POST":
+        db.execute("DELETE FROM admins_picks")
+
+        for admin_name in ["fate", "akriti"]:
+            for content_type in ["anime", "movie"]:
+                for pos in range(1, 11):  # allow up to 10 picks
+                    cid = request.form.get(f"{admin_name}_{content_type}_{pos}")
+                    if cid:
+                        db.execute("""
+                            INSERT INTO admins_picks (admin_name, type, position, content_id)
+                            VALUES (?, ?, ?, ?)
+                        """, (admin_name, content_type, pos, cid))
+
+        db.commit()
+        return redirect("/admin/picks")
+
+    # Fetch all content
+    content = db.execute("""
+        SELECT id, title, type
+        FROM content
+        ORDER BY title
+    """).fetchall()
+
+    # Fetch current picks
+    picks = db.execute("""
+        SELECT admin_name, type, position, content_id
+        FROM admins_picks
+    """).fetchall()
+
+    picks_map = {
+        (row["admin_name"], row["type"], row["position"]): row["content_id"]
+        for row in picks
+    }
+
+    return render_template(
+        "admin/picks.html",
+        content=content,
+        picks_map=picks_map
+    )
 
 
 

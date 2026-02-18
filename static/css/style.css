@@ -1859,3 +1859,151 @@ body.light .theme-toggle {
     color: #facc15;
     text-align: right;
 }
+
+
+.curator-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+}
+
+.curator-panel {
+    padding: 20px;
+    border-radius: 20px;
+    background: rgba(255,255,255,0.03);
+}
+
+.fate-panel {
+    text-align: right;
+    border: 1px solid rgba(106,92,255,0.4);
+}
+
+.fate-panel .pick-overlay {
+    text-align: right;
+    align-items: flex-end;
+}
+
+
+.akriti-panel {
+    border: 1px solid rgba(236,72,153,0.4);
+}
+
+
+.pick-item {
+    display: block;
+    height: 85px;
+    margin-bottom: 14px;
+
+    background-size: cover;
+    background-position: center;
+
+    border-radius: 14px;
+    overflow: hidden;
+    position: relative;
+
+    /* filter: blur(2px); */
+    transition: all 0.4s ease;
+}
+
+.pick-item:hover {
+    height: 220px;
+    filter: blur(0);
+}
+
+.pick-overlay {
+    position: absolute;
+    inset: 0;
+    padding: 18px;
+
+    background: linear-gradient(
+        to right,
+        rgba(10,15,30,0.95) 0%,
+        rgba(10,15,30,0.75) 40%,
+        rgba(10,15,30,0.2) 70%,
+        transparent 100%
+    );
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+
+.pick-rank {
+    font-weight: bold;
+    font-size: 18px;
+    color: #fff;
+}
+
+.pick-title {
+    margin: 4px 0;
+    color: #fff;
+}
+
+.pick-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #fff;
+    text-shadow: 0 2px 6px rgba(0,0,0,0.8);
+}
+
+
+.pick-extra {
+    opacity: 0;
+    transform: translateY(10px);
+    transition: 0.3s ease;
+}
+
+.pick-item:hover .pick-extra {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.pick-rating {
+    font-weight: 600;
+    color: gold;
+}
+
+.pick-desc {
+    font-size: 13px;
+    color: #ddd;
+    margin-top: 6px;
+}
+
+.pick-item {
+    transition: transform 0.4s ease, height 0.4s ease, filter 0.4s ease;
+}
+
+.pick-item:hover {
+    transform: scale(1.02);
+}
+
+.pick-item {
+    position: relative;
+    height: 85px;
+    margin-bottom: 14px;
+    border-radius: 14px;
+    overflow: hidden;
+    transition: height 0.4s ease;
+}
+
+.pick-bg {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+
+    filter: blur(2px);
+    transform: scale(1.05); /* prevents blur edge cutoff */
+
+    transition: filter 0.4s ease, transform 0.4s ease;
+}
+
+.pick-item:hover {
+    height: 220px;
+}
+
+.pick-item:hover .pick-bg {
+    filter: blur(0);
+    transform: scale(1.02);
+}

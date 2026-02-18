@@ -63,3 +63,10 @@
 --     PRIMARY KEY (type, position)
 -- );
 
+CREATE TABLE admins_picks (
+    admin_name TEXT NOT NULL,   -- 'fate' or 'akriti'
+    type TEXT NOT NULL,         -- 'anime' or 'movie'
+    position INTEGER NOT NULL,
+    content_id INTEGER NOT NULL,
+    PRIMARY KEY (admin_name, type, position)
+);
