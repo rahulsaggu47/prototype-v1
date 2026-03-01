@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<head>
+    <link rel="stylesheet" href="/static/css/profile.css">
+</head>
+
+<section class="profile-container">
+    
+    <div class="profile-header">
+        <div class="profile-avatar">
+            <img src="{% if user.avatar_type == 'default' %}
+                {{ url_for('static', filename='avatars/default/' + user.avatar_value) }}
+            {% else %}
+                {{ url_for('static', filename=user.avatar_value) }}
+            {% endif %}">
+        </div>
+
+        <h2>{{ user.username }}</h2>
+        <p class="join-date">Member of NextWatch</p>
+
+        <button class="edit-avatar-btn">Edit Avatar</button>
+    </div>
+
+
+    <!-- Avatar Modal -->
+<div class="avatar-modal" id="avatarModal">
+    <div class="avatar-modal-content">
+
+        <!-- Tab Header -->
+        <div class="avatar-tabs">
+            <button class="avatar-tab active" data-tab="defaultTab">
+                Select Your Avatar
+            </button>
+            <button class="avatar-tab" data-tab="uploadTab">
+                Upload Your Own Avatar
+            </button>
+        </div>
+
+        <!-- DEFAULT TAB -->
+        <div class="avatar-tab-content active" id="defaultTab">
+               
+            {% set avatars = [
+                "anime_boy_1.jpeg","anime_boy_2.jpeg","anime_boy_3.jpeg",
+                "anime_girl_1.jpeg","anime_girl_2.jpeg","anime_girl_3.jpeg",
+                "anime_boy_4.jpeg","iron_man.png","thor.png",
+                "spooderman.png","hulk.png","cmarvel.png"
+            ] %}
+
+            <div class="avatar-grid">
+                {% for avatar in avatars %}
+                    <img src="{{ url_for('static', filename='avatars/default/' + avatar) }}"
+                         class="avatar-option"
+                         data-avatar="{{ avatar }}">
+                {% endfor %}
+            </div>
+
+        </div>
+
+        <!-- UPLOAD TAB -->
+        <div class="avatar-tab-content" id="uploadTab">
+
+            <div class="upload-area" id="uploadArea">
+                <p>Click or Drag Image Here</p>
+                <input type="file" id="avatarInput" accept="image/*" hidden>
+            </div>
+
+        </div>
+
+        <button onclick="closeAvatarModal()" class="cancel-btn">
+            Cancel
+        </button>
+
+    </div>
+</div>
+
+
+    <div class="profile-section">
+        <h3>⭐ Your Favorites</h3>
+        <div class="favorites-row">
+            <!-- Will populate in Step 4 -->
+        </div>
+    </div>
+
+    <div class="profile-section">
+        <h3>💬 Your Reviews</h3>
+        <div class="reviews-list">
+            <!-- Will populate in Step 5 -->
+        </div>
+    </div>
+
+</section>
+
+
+<script>
+const modal = document.getElementById("avatarModal");
+
+document.querySelector(".edit-avatar-btn")
+    .addEventListener("click", () => {
+        modal.style.display = "flex";
+    });
+
+function closeAvatarModal() {
+    modal.style.display = "none";
+}
+
+document.querySelectorAll(".avatar-option").forEach(option => {
+    option.addEventListener("click", function() {
+        const avatar = this.dataset.avatar;
+
+        fetch("/set-avatar", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ avatar: avatar })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    });
+});
+
+const uploadArea = document.getElementById("uploadArea");
+const avatarInput = document.getElementById("avatarInput");
+
+uploadArea.addEventListener("click", () => avatarInput.click());
+
+avatarInput.addEventListener("change", function() {
+    const file = this.files[0];
+
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+        alert("File must be under 2MB");
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("avatar", file);
+
+    fetch("/upload-avatar", {
+        method: "POST",
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert(data.error || "Upload failed");
+        }
+    });
+});
+
+document.querySelectorAll(".avatar-tab").forEach(tab => {
+    tab.addEventListener("click", function() {
+
+        document.querySelectorAll(".avatar-tab")
+            .forEach(t => t.classList.remove("active"));
+
+        document.querySelectorAll(".avatar-tab-content")
+            .forEach(c => c.classList.remove("active"));
+
+        this.classList.add("active");
+
+        const tabId = this.dataset.tab;
+        document.getElementById(tabId).classList.add("active");
+    });
+});
+</script>
+
+{% endblock %}

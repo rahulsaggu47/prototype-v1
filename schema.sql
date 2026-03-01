@@ -63,10 +63,24 @@
 --     PRIMARY KEY (type, position)
 -- );
 
-CREATE TABLE admins_picks (
-    admin_name TEXT NOT NULL,   -- 'fate' or 'akriti'
-    type TEXT NOT NULL,         -- 'anime' or 'movie'
-    position INTEGER NOT NULL,
-    content_id INTEGER NOT NULL,
-    PRIMARY KEY (admin_name, type, position)
-);
+-- CREATE TABLE admins_picks (
+--     admin_name TEXT NOT NULL,   -- 'fate' or 'akriti'
+--     type TEXT NOT NULL,         -- 'anime' or 'movie'
+--     position INTEGER NOT NULL,
+--     content_id INTEGER NOT NULL,
+--     PRIMARY KEY (admin_name, type, position)
+-- );
+
+
+-- CREATE TABLE reviews (
+--     id INTEGER PRIMARY KEY AUTOINCREMENT,
+--     user_id INTEGER NOT NULL,
+--     content_id INTEGER NOT NULL,
+--     rating REAL NOT NULL,
+--     comment TEXT,
+--     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+--     FOREIGN KEY(user_id) REFERENCES users(id),
+--     FOREIGN KEY(content_id) REFERENCES content(id)
+-- );
+ALTER TABLE users ADD COLUMN avatar_type TEXT DEFAULT 'default';
+ALTER TABLE users ADD COLUMN avatar_value TEXT DEFAULT 'avatar1.png';

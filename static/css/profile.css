@@ -1,0 +1,175 @@
+.profile-container {
+    padding: 60px 8%;
+    color: white;
+}
+
+.profile-header {
+    text-align: center;
+    margin-bottom: 60px;
+}
+
+.profile-avatar {
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 20px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 3px solid rgba(180, 120, 255, 0.8);
+    box-shadow: 0 0 20px rgba(180, 120, 255, 0.5);
+}
+
+.profile-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.edit-avatar-btn {
+    margin-top: 15px;
+    padding: 8px 20px;
+    background: linear-gradient(135deg, #7b4fff, #ff4fd8);
+    border: none;
+    border-radius: 20px;
+    color: white;
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+.edit-avatar-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 15px rgba(255, 79, 216, 0.6);
+}
+
+.profile-section {
+    margin-bottom: 50px;
+}
+
+.avatar-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(10px);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+}
+
+.avatar-modal-content {
+    background: #111;
+    padding: 40px;
+    border-radius: 20px;
+    width: 600px;
+    max-width: 90%;
+    box-shadow: 0 0 40px rgba(180,120,255,0.4);
+}
+
+.avatar-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.avatar-option {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.avatar-option:hover {
+    transform: scale(1.08);
+    border: 2px solid #b478ff;
+    box-shadow: 0 0 15px rgba(180,120,255,0.6);
+}
+
+.upload-area {
+    margin-top: 15px;
+    padding: 30px;
+    border: 2px dashed rgba(180,120,255,0.5);
+    border-radius: 15px;
+    text-align: center;
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+.upload-area:hover {
+    background: rgba(180,120,255,0.1);
+    border-color: #b478ff;
+}
+
+.avatar-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    margin-bottom: 25px;
+}
+
+.avatar-tab {
+    background: none;
+    border: none;
+    color: #aaa;
+    font-size: 18px;
+    cursor: pointer;
+    padding-bottom: 5px;
+    position: relative;
+    transition: 0.3s ease;
+}
+
+.avatar-tab.active {
+    color: white;
+}
+
+.avatar-tab.active::after {
+    content: "";
+    position: absolute;
+    bottom: -5px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, #7b4fff, #ff4fd8);
+}
+
+.avatar-tab-content {
+    display: none;
+}
+
+.avatar-tab-content.active {
+    display: block;
+}
+
+.cancel-btn {
+    margin-top: 25px;
+    background: #222;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 20px;
+    color: white;
+    cursor: pointer;
+}
+
+.avatar-content-wrapper {
+    position: relative;
+    overflow: hidden;
+    min-height: 420px; /* match default grid height */
+}
+
+.avatar-tab-content {
+    position: absolute;
+    width: 100%;
+    top: 0;
+    left: 0;
+    opacity: 0;
+    transform: translateX(40px);
+    transition: all 0.4s ease;
+}
+
+.avatar-tab-content.active {
+    opacity: 1;
+    transform: translateX(0);
+    position: relative;
+}
+

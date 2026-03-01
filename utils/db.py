@@ -1,6 +1,8 @@
 import sqlite3
 from flask import g
 
+from seed_data import DB_NAME
+
 DATABASE = "database.db"
 
 def get_db():
@@ -219,3 +221,15 @@ def get_admin_picks(admin_name, content_type, limit=10):
         ORDER BY ap.position
         LIMIT ?
     """, (admin_name, content_type, limit)).fetchall()
+
+def get_user_by_id(user_id):
+    conn = sqlite3.connect(DB_NAME)
+    conn.row_factory = sqlite3.Row
+
+    user = conn.execute(
+        "SELECT * FROM users WHERE id = ?",
+        (user_id,)
+    ).fetchone()
+
+    conn.close()
+    return user

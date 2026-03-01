@@ -1,5 +1,7 @@
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
+import os
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 from utils.db import (
     get_db,
     close_db,
@@ -15,7 +17,8 @@ from utils.db import (
     get_spotlight_content,
     get_top_rated,
     get_spotlight_map,
-    get_admin_picks
+    get_admin_picks,
+    get_user_by_id
 )
 
 
@@ -511,7 +514,117 @@ def admin_picks():
         picks_map=picks_map
     )
 
+@app.route("/api/reviews/<int:content_id>")
+def get_reviews(content_id):
+    db = get_db()
+    rows = db.execute("""
+        SELECT r.*, 
+               u.username,
+               u.avatar_type,
+               u.avatar_value
+        FROM reviews r
+        JOIN users u ON r.user_id = u.id
+        WHERE content_id = ?
+        ORDER BY created_at DESC
+    """, (content_id,)).fetchall()
 
+    return jsonify([dict(row) for row in rows])
+
+@app.route("/add-review", methods=["POST"])
+def add_review():
+    if "user_id" not in session:
+        return jsonify({"error": "login required"}), 401
+
+    data = request.json
+    db = get_db()
+
+    db.execute("""
+        INSERT INTO reviews (user_id, content_id, rating, comment)
+        VALUES (?, ?, ?, ?)
+    """, (
+        session["user_id"],
+        data["content_id"],
+        data["rating"],
+        data["comment"]
+    ))
+
+    db.commit()
+    return jsonify({"success": True})
+
+
+@app.context_processor
+def inject_user():
+    if 'user_id' in session:
+        user = get_user_by_id(session['user_id'])
+        return dict(user=user)
+    return dict(user=None)
+
+@app.route("/profile")
+def profile():
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    user = get_user_by_id(session["user_id"])
+    return render_template("profile.html", user=user)
+
+@app.route("/set-avatar", methods=["POST"])
+def set_avatar():
+    if "user_id" not in session:
+        return {"success": False}, 403
+
+    avatar_name = request.json.get("avatar")
+
+    db = get_db()
+    db.execute(
+        "UPDATE users SET avatar_type = ?, avatar_value = ? WHERE id = ?",
+        ("default", avatar_name, session["user_id"])
+    )
+    db.commit()
+    db.close()
+
+    return {"success": True}
+
+
+UPLOAD_FOLDER = "static/uploads/avatars"
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
+
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+
+
+def allowed_file(filename):
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+@app.route("/upload-avatar", methods=["POST"])
+def upload_avatar():
+    if "user_id" not in session:
+        return {"success": False}, 403
+
+    if "avatar" not in request.files:
+        return {"success": False, "error": "No file provided"}
+
+    file = request.files["avatar"]
+
+    if file.filename == "":
+        return {"success": False, "error": "Empty filename"}
+
+    if file and allowed_file(file.filename):
+        filename = f"user_{session['user_id']}.png"
+        filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+
+        file.save(filepath)
+
+        db = get_db()
+        db.execute(
+            "UPDATE users SET avatar_type = ?, avatar_value = ? WHERE id = ?",
+            ("custom", f"uploads/avatars/{filename}", session["user_id"])
+        )
+        db.commit()
+        db.close()
+
+        return {"success": True}
+
+    return {"success": False, "error": "Invalid file type"}
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -64,7 +64,14 @@
         </button>
 
         {% if session.get("user_id") %}
-            <span class="user-label">Hi 👋</span>
+            <a href="{{ url_for('profile') }}" class="nav-avatar">
+                <img src="{% if user.avatar_type == 'default' %}
+                    {{ url_for('static', filename='avatars/default/' + user.avatar_value) }}
+                {% else %}
+                    {{ url_for('static', filename=user.avatar_value) }}
+                {% endif %}" 
+                alt="Profile">
+            </a>
             <a href="/logout" class="logout-btn">Logout</a>
         {% else %}
             <a href="/login">Login</a>

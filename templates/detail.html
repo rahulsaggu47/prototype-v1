@@ -45,6 +45,34 @@
     </div>
 </section>
 
+<section class="reviews-section">
+    <h2>⭐ Reviews</h2>
+
+    {% if session.get("user_id") %}
+    <div class="review-form">
+        <div class="star-rating" id="starRating">
+            <span data-value="5">★</span>
+            <span data-value="4">★</span>
+            <span data-value="3">★</span>
+            <span data-value="2">★</span>
+            <span data-value="1">★</span>
+        </div>
+
+<input type="hidden" id="reviewRating" value="5">
+
+        <textarea id="reviewComment"
+                  placeholder="Write your thoughts..."></textarea>
+
+        <button id="submitReview">Submit Review</button>
+    </div>
+    {% else %}
+        <p class="login-message">
+            Please <a href="/login">login</a> to write a review.
+        </p>
+    {% endif %}
+
+    <div id="reviewsContainer"></div>
+</section>
 
 <script>
 const favBtn = document.getElementById("fav-btn");
@@ -99,9 +127,93 @@ favBtn.addEventListener("click", async () => {
     }
 
 });
+
+// ================= REVIEWS =================
+
+function loadReviews() {
+    fetch(`/api/reviews/${contentId}`)
+        .then(res => res.json())
+        .then(data => {
+            const container = document.getElementById("reviewsContainer");
+            container.innerHTML = "";
+
+            data.forEach(r => {
+
+                const avatarUrl = r.avatar_type === "default"
+                    ? `/static/avatars/default/${r.avatar_value}`
+                    : `/static/${r.avatar_value}`;
+
+                container.innerHTML += `
+                    <div class="review-card">
+
+                        <div class="review-header">
+
+                            <div class="review-left">
+                                <img src="${avatarUrl}" class="review-avatar">
+                                <span class="review-username">${r.username}</span>
+                            </div>
+
+                            <span class="review-rating">${r.rating} ⭐</span>
+
+                        </div>
+
+                        <p>${r.comment || ""}</p>
+
+                    </div>
+                `;
+            });
+        });
+}
+
+loadReviews();
+
+const reviewBtn = document.getElementById("submitReview");
+if (reviewBtn) {
+    reviewBtn.addEventListener("click", async () => {
+        await fetch("/add-review", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                content_id: contentId,
+                rating: parseFloat(document.getElementById("reviewRating").value),
+                comment: document.getElementById("reviewComment").value
+            })
+        });
+
+        document.getElementById("reviewComment").value = "";
+        loadReviews();
+    });
+}
+
+// ===== STAR RATING INTERACTION =====
+
+const stars = document.querySelectorAll("#starRating span");
+const ratingInput = document.getElementById("reviewRating");
+
+if (stars.length > 0) {
+    stars.forEach(star => {
+        star.addEventListener("click", () => {
+            const value = star.dataset.value;
+            ratingInput.value = value;
+
+            stars.forEach(s => {
+                s.classList.toggle(
+                    "active",
+                    s.dataset.value <= value
+                );
+            });
+        });
+    });
+
+    // default highlight
+    stars.forEach(s => {
+        if (s.dataset.value <= ratingInput.value) {
+            s.classList.add("active");
+        }
+    });
+}
+
 </script>
-
-
 
 
 {% endblock %}
