@@ -518,14 +518,14 @@ def admin_picks():
 def get_reviews(content_id):
     db = get_db()
     rows = db.execute("""
-        SELECT r.*, 
+        SELECT r.*,
                u.username,
                u.avatar_type,
                u.avatar_value
         FROM reviews r
         JOIN users u ON r.user_id = u.id
-        WHERE content_id = ?
-        ORDER BY created_at DESC
+        WHERE r.content_id = ?
+        ORDER BY r.created_at DESC
     """, (content_id,)).fetchall()
 
     return jsonify([dict(row) for row in rows])
@@ -551,6 +551,52 @@ def add_review():
     db.commit()
     return jsonify({"success": True})
 
+@app.route("/edit-review/<int:review_id>", methods=["POST"])
+def edit_review(review_id):
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 403
+
+    db = get_db()
+
+    review = db.execute(
+        "SELECT * FROM reviews WHERE id = ?",
+        (review_id,)
+    ).fetchone()
+
+    if not review or review["user_id"] != session["user_id"]:
+        return jsonify({"error": "Forbidden"}), 403
+
+    data = request.json
+
+    db.execute("""
+        UPDATE reviews
+        SET comment = ?, rating = ?
+        WHERE id = ?
+    """, (data["comment"], data["rating"], review_id))
+
+    db.commit()
+
+    return jsonify({"success": True})
+
+@app.route("/delete-review/<int:review_id>", methods=["POST"])
+def delete_review(review_id):
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 403
+
+    db = get_db()
+
+    review = db.execute(
+        "SELECT * FROM reviews WHERE id = ?",
+        (review_id,)
+    ).fetchone()
+
+    if not review or review["user_id"] != session["user_id"]:
+        return jsonify({"error": "Forbidden"}), 403
+
+    db.execute("DELETE FROM reviews WHERE id = ?", (review_id,))
+    db.commit()
+
+    return jsonify({"success": True})
 
 @app.context_processor
 def inject_user():
@@ -583,7 +629,9 @@ def profile():
 
     # User Reviews (join with content)
     reviews = db.execute("""
-        SELECT r.*, c.title
+        SELECT r.*, 
+               c.title,
+               c.poster_url
         FROM reviews r
         JOIN content c ON r.content_id = c.id
         WHERE r.user_id = ?

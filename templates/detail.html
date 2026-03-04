@@ -129,11 +129,16 @@ favBtn.addEventListener("click", async () => {
 });
 
 // ================= REVIEWS =================
+const currentUserId = {{ session.get("user_id") | tojson }};
+
+// ================= LOAD REVIEWS =================
 
 function loadReviews() {
+
     fetch(`/api/reviews/${contentId}`)
         .then(res => res.json())
         .then(data => {
+
             const container = document.getElementById("reviewsContainer");
             container.innerHTML = "";
 
@@ -143,8 +148,10 @@ function loadReviews() {
                     ? `/static/avatars/default/${r.avatar_value}`
                     : `/static/${r.avatar_value}`;
 
+                const isOwner = currentUserId && r.user_id === currentUserId;
+
                 container.innerHTML += `
-                    <div class="review-card">
+                    <div class="review-card" data-id="${r.id}">
 
                         <div class="review-header">
 
@@ -153,19 +160,164 @@ function loadReviews() {
                                 <span class="review-username">${r.username}</span>
                             </div>
 
-                            <span class="review-rating">${r.rating} ⭐</span>
+                            <div class="review-right">
+
+                                <span class="review-rating">${r.rating} ⭐</span>
+
+                                ${isOwner ? `
+                                    <div class="review-actions">
+                                        <button class="edit-review-btn">✏</button>
+                                        <button class="delete-review-btn">🗑</button>
+                                    </div>
+                                ` : ""}
+
+                            </div>
 
                         </div>
 
-                        <p>${r.comment || ""}</p>
+                        <p class="review-comment">${r.comment || ""}</p>
 
                     </div>
                 `;
             });
+
         });
 }
 
 loadReviews();
+
+
+// ================= CLICK HANDLER =================
+
+document.addEventListener("click", async function(e) {
+
+    // ================= DELETE REVIEW =================
+
+    if (e.target.classList.contains("delete-review-btn")) {
+
+        const card = e.target.closest(".review-card");
+        const reviewId = card.dataset.id;
+
+        if (!confirm("Delete this review?")) return;
+
+        const res = await fetch(`/delete-review/${reviewId}`, {
+            method: "POST"
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+            card.remove();
+        }
+
+    }
+
+
+    // ================= EDIT REVIEW =================
+
+    if (e.target.classList.contains("edit-review-btn")) {
+
+        const card = e.target.closest(".review-card");
+        const commentEl = card.querySelector(".review-comment");
+
+        const oldComment = commentEl.textContent.trim();
+
+        const currentRating = parseFloat(
+            card.querySelector(".review-rating").textContent
+        );
+
+        commentEl.innerHTML = `
+            <div class="edit-review-ui">
+
+                <div class="edit-stars">
+                    ${[1,2,3,4,5].map(i => `
+                        <span class="edit-star ${i <= currentRating ? "active" : ""}" data-value="${i}">
+                            ★
+                        </span>
+                    `).join("")}
+                </div>
+
+                <textarea class="edit-textarea">${oldComment}</textarea>
+
+                <div class="edit-actions">
+                    <button class="save-edit">Save</button>
+                    <button class="cancel-edit">Cancel</button>
+                </div>
+
+            </div>
+        `;
+
+        // ⭐ STAR CLICK LOGIC
+
+        const stars = card.querySelectorAll(".edit-star");
+
+        stars.forEach(star => {
+
+            star.addEventListener("click", () => {
+
+                const value = star.dataset.value;
+
+                stars.forEach(s => {
+                    s.classList.toggle("active", s.dataset.value <= value);
+                });
+
+            });
+
+        });
+
+        // ⌨ ENTER TO SAVE
+
+        const textarea = card.querySelector(".edit-textarea");
+
+        textarea.addEventListener("keydown", function(ev) {
+
+            if (ev.key === "Enter" && !ev.shiftKey) {
+                ev.preventDefault();
+                card.querySelector(".save-edit").click();
+            }
+
+        });
+
+    }
+
+
+    // ================= CANCEL EDIT =================
+
+    if (e.target.classList.contains("cancel-edit")) {
+        loadReviews();
+    }
+
+
+    // ================= SAVE EDIT =================
+
+    if (e.target.classList.contains("save-edit")) {
+
+        const card = e.target.closest(".review-card");
+        const reviewId = card.dataset.id;
+
+        const newComment = card.querySelector(".edit-textarea").value;
+
+        const activeStars = card.querySelectorAll(".edit-star.active");
+        const rating = activeStars.length;
+
+        const res = await fetch(`/edit-review/${reviewId}`, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                comment: newComment,
+                rating: rating
+            })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+            loadReviews();
+        }
+
+    }
+
+});
 
 const reviewBtn = document.getElementById("submitReview");
 if (reviewBtn) {

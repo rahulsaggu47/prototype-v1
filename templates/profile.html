@@ -92,29 +92,43 @@
 
     <div class="profile-section">
         <h3>💬 Your Reviews</h3>
-        <div class="reviews-list">
+        <div class="profile-reviews-scroll">
+
             {% if reviews %}
-                {% for r in reviews %}
-                    <div class="profile-review-card">
 
-                        <div class="profile-review-header">
-                            <a href="{{ url_for('content_detail', content_id=r.content_id) }}" class="profile-review-title">
-                                {{ r.title }}
-                            </a>
-                        <span class="profile-review-rating">
-                            {{ r.rating }} ⭐
-                        </span>
-                    </div>
+                {% for i in range(0, reviews|length, 2) %}
+                    <div class="review-column">
 
-                    <p class="profile-review-comment">
-                        {{ r.comment }}
-                    </p>
+                        {% for r in reviews[i:i+2] %}
+                            <a href="{{ url_for('content_detail', content_id=r.content_id) }}" 
+                                class="profile-review-card">
 
-                </div>
-            {% endfor %}
-        {% else %}
-            <p class="empty-message">You haven't written any reviews yet.</p>
-        {% endif %}
+                                    <img src="{{ r.poster_url }}" class="profile-review-poster">
+
+                                    <div class="profile-review-content">
+
+                                        <div class="profile-review-header">
+                                            <span class="profile-review-title">
+                                                {{ r.title }}
+                                            </span>
+
+                                            <span class="profile-review-rating">
+                                                {{ r.rating }} ⭐
+                                            </span>
+                                        </div>
+
+                                        <p class="profile-review-comment">
+                                            {{ r.comment }}
+                                        </p>
+                                    </div>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+            {% else %}
+                <p class="empty-message">You haven't written any reviews yet.</p>
+            {% endif %}
+        </div>
     </div>
 
 </section>

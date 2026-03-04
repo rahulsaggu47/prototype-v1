@@ -2247,3 +2247,88 @@ body.light .theme-toggle {
     transform: scale(1.08);
     box-shadow: 0 0 12px rgba(180, 120, 255, 0.7);
 }
+
+.review-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.review-actions button {
+    background: rgba(255,255,255,0.05);
+    border: none;
+    color: #ccc;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 6px;
+    transition: 0.2s ease;
+}
+
+.review-actions button:hover {
+    background: rgba(127,92,255,0.4);
+    color: white;
+}
+
+/* ===== EDIT REVIEW UI ===== */
+
+.edit-review-ui {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.edit-stars {
+    display: flex;
+    gap: 6px;
+    font-size: 22px;
+    cursor: pointer;
+}
+
+.edit-star {
+    color: rgba(255,255,255,0.25);
+    transition: 0.2s ease;
+}
+
+.edit-star.active {
+    color: gold;
+    text-shadow: 0 0 8px rgba(255,215,0,0.7);
+}
+
+.edit-star:hover {
+    transform: scale(1.2);
+}
+
+.edit-textarea {
+    resize: none;
+    min-height: 80px;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.05);
+    color: white;
+    font-size: 14px;
+}
+
+.edit-textarea:focus {
+    outline: none;
+    border-color: rgba(127,92,255,0.7);
+}
+
+.edit-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.edit-actions button {
+    padding: 6px 16px;
+    border-radius: 20px;
+    border: none;
+    background: linear-gradient(90deg,#7f5cff,#ec4899);
+    color: white;
+    cursor: pointer;
+}
+
+.edit-actions button:last-child {
+    background: rgba(255,255,255,0.08);
+}
