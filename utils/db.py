@@ -1,12 +1,9 @@
 import sqlite3
 from flask import g
 import os
-from seed_data import DB_NAME
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 db_path = os.path.join(BASE_DIR, "database.db")
-
-conn = sqlite3.connect(db_path)
 
 DATABASE = db_path
 
@@ -166,20 +163,15 @@ def save_user_genres(user_id, genres):
     db.commit()
 
 def get_top_rated(content_type):
-    conn = get_db()
-    cur = conn.cursor()
+    db = get_db()
 
-    cur.execute("""
+    return db.execute("""
         SELECT id, title, poster_url, rating
         FROM content
         WHERE type = ?
         ORDER BY rating DESC
         LIMIT 5
-    """, (content_type,))
-
-    data = cur.fetchall()
-    conn.close()
-    return data
+    """, (content_type,)).fetchall()
 
 def get_spotlight_content(content_type, limit=3):
     db = get_db()
@@ -209,10 +201,8 @@ def get_spotlight_content(content_type, limit=3):
 
 
 def get_spotlight_map():
-    conn = get_db()
-    cur = conn.cursor()
-    cur.execute("SELECT position, content_id FROM spotlight")
-    return {row["position"]: row["content_id"] for row in cur.fetchall()}
+    db = get_db()
+    return {row["position"]: row["content_id"] for row in db.execute("SELECT position, content_id FROM spotlight").fetchall()}
 
 
 def get_admin_picks(admin_name, content_type, limit=10):
@@ -228,13 +218,11 @@ def get_admin_picks(admin_name, content_type, limit=10):
     """, (admin_name, content_type, limit)).fetchall()
 
 def get_user_by_id(user_id):
-    conn = sqlite3.connect(DB_NAME)
-    conn.row_factory = sqlite3.Row
+    db = get_db()
+    db.row_factory = sqlite3.Row
 
-    user = conn.execute(
+    return db.execute(
         "SELECT * FROM users WHERE id = ?",
         (user_id,)
     ).fetchone()
-
-    conn.close()
-    return user
+    

@@ -62,7 +62,6 @@ Rules:
 - Keep responses short. 2-4 sentences for simple questions, a short paragraph for recommendations.
 - When recommending, give 2-4 specific titles with a one-line reason for each. Do not list 10 things.
 - If the user's genre preferences are in context, use them to personalize your response.
-- Do not msg first. Only respond when the user initiates a conversation or asks a question.
 """
 
 def is_admin():

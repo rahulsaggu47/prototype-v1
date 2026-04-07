@@ -200,7 +200,7 @@ body { background: var(--ink); color: #e8eaf0; font-family: var(--font-body); ov
 .how-card:hover::before { transform: scaleX(1); }
 .how-number {
   font-family: var(--font-display); font-size: 60px; letter-spacing: 2px;
-  color: rgba(127,92,255,0.15); line-height: 1; margin-bottom: 20px;
+  color: rgba(149, 119, 255, 0.425); line-height: 1; margin-bottom: 20px;
 }
 .how-icon { font-size: 32px; margin-bottom: 16px; }
 .how-title { font-size: 18px; font-weight: 600; color: #fff; margin-bottom: 10px; }
