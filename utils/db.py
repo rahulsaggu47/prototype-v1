@@ -1,6 +1,8 @@
 import sqlite3
 from flask import g
 import os
+import os
+
 from seed_data import DB_NAME
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
