@@ -33,6 +33,54 @@
     🔒 Please log in to use favorites
 </div>
 
+<!-- FAB -->
+<button id="nexi-fab" title="Chat with Nexi — NextWatch AI">
+  <span class="fab-open">✦</span>
+  <span class="fab-close">✕</span>
+  <span id="nexi-unread">1</span>
+</button>
+
+<!-- Chat window -->
+<div id="nexi-window">
+  <div class="nexi-accent"></div>
+
+  <div class="nexi-header">
+    <div class="nexi-av">✦</div>
+    <div class="nexi-hinfo">
+      <div class="nexi-hname">Nexi</div>
+      <div class="nexi-hstatus">● Online · NextWatch AI</div>
+    </div>
+    <div class="nexi-hbtns">
+      <button class="nexi-hbtn" id="nexi-clear-btn" title="Clear chat">🗑</button>
+      <button class="nexi-hbtn" id="nexi-close-btn" title="Close">✕</button>
+    </div>
+  </div>
+
+  <div class="nexi-msgs" id="nexi-msgs"></div>
+
+  <div class="nexi-sugg" id="nexi-sugg">
+    <button class="nexi-sugg-btn" data-q="What anime should I watch tonight?">🎌 Anime for tonight</button>
+    <button class="nexi-sugg-btn" data-q="Recommend a movie based on my mood">🎬 Movie for my mood</button>
+    <button class="nexi-sugg-btn" data-q="What are some underrated hidden gem anime?">💎 Hidden gems</button>
+    <button class="nexi-sugg-btn" data-q="Pick something for me">🙏 Pick for me</button>
+  </div>
+
+  <div class="nexi-input-row">
+    <textarea id="nexi-input" placeholder="Ask Nexi anything about anime or movies…" rows="1"></textarea>
+    <button id="nexi-send" disabled title="Send">➤</button>
+  </div>
+
+  <div class="nexi-confirm-wrap" id="nexi-confirm">
+    <div class="nexi-confirm-icon">🗑️</div>
+    <div class="nexi-confirm-title">Clear conversation?</div>
+    <div class="nexi-confirm-sub">Nexi will forget everything said in this session.</div>
+    <div class="nexi-confirm-btns">
+      <button class="nexi-cy" id="nexi-cy">Yes, clear</button>
+      <button class="nexi-cn" id="nexi-cn">Cancel</button>
+    </div>
+  </div>
+</div>
+
 
 </body>
 
@@ -113,6 +161,203 @@ function triggerShake() {
     void main.offsetWidth;          // force reflow
     main.classList.add("shake");
 }
+</script>
+
+
+<script>
+(function () {
+  const MAX_HIST = 10;
+  let history   = [];
+  let isOpen    = false;
+  let isBusy    = false;
+//   let greeted   = false;
+
+  const fab     = document.getElementById("nexi-fab");
+  const win     = document.getElementById("nexi-window");
+  const msgsEl  = document.getElementById("nexi-msgs");
+  const inputEl = document.getElementById("nexi-input");
+  const sendEl  = document.getElementById("nexi-send");
+  const suggEl  = document.getElementById("nexi-sugg");
+  const unread  = document.getElementById("nexi-unread");
+  const confirm = document.getElementById("nexi-confirm");
+
+  // ── Open / close ───────────────────────────────────────
+  fab.addEventListener("click", () => isOpen ? close() : open());
+  document.getElementById("nexi-close-btn").addEventListener("click", close);
+
+  function open() {
+    isOpen = true;
+    fab.classList.add("open");
+    win.classList.add("open");
+    unread.classList.remove("show");
+    inputEl.focus();
+    if (!msgsEl.children.length) {
+        addMsg("bot", "Hey! I'm Nexi 👋 How can i help you out?");
+    }
+  }
+
+  function close() {
+    isOpen = false;
+    fab.classList.remove("open");
+    win.classList.remove("open");
+  }
+
+  // ── Input ──────────────────────────────────────────────
+  inputEl.addEventListener("input", () => {
+    inputEl.style.height = "auto";
+    inputEl.style.height = Math.min(inputEl.scrollHeight, 100) + "px";
+    sendEl.disabled = !inputEl.value.trim() || isBusy;
+  });
+  inputEl.addEventListener("keydown", e => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (!sendEl.disabled) send(); }
+  });
+  sendEl.addEventListener("click", send);
+
+  // ── Suggestions ────────────────────────────────────────
+  document.querySelectorAll(".nexi-sugg-btn").forEach(b => {
+    b.addEventListener("click", () => {
+      inputEl.value = b.dataset.q;
+      sendEl.disabled = false;
+      hideSugg();
+      send();
+    });
+  });
+
+  function hideSugg() {
+    if (!suggEl.clientHeight) return;
+    suggEl.style.maxHeight = suggEl.offsetHeight + "px";
+    requestAnimationFrame(() => {
+      suggEl.style.transition = "max-height 0.35s ease, opacity 0.3s ease, padding 0.3s ease, border 0.3s ease";
+      suggEl.style.maxHeight = "0";
+      suggEl.style.opacity = "0";
+      suggEl.style.padding = "0";
+      suggEl.style.borderTopWidth = "0";
+    });
+  }
+
+  // ── Clear chat ─────────────────────────────────────────
+  document.getElementById("nexi-clear-btn").addEventListener("click", () => confirm.classList.add("show"));
+  document.getElementById("nexi-cn").addEventListener("click", () => confirm.classList.remove("show"));
+  document.getElementById("nexi-cy").addEventListener("click", () => {
+    history = []; greeted = false;
+    msgsEl.innerHTML = "";
+    confirm.classList.remove("show");
+    // Reset suggestions
+    suggEl.removeAttribute("style");
+    addMsg("bot", "Hey! I'm Nexi 👋 How can i help you out?");
+  });
+
+  // ── Send ───────────────────────────────────────────────
+  function send() {
+    const text = inputEl.value.trim();
+    if (!text || isBusy) return;
+    addMsg("user", text);
+    history.push({ role: "user", content: text });
+    inputEl.value = "";
+    inputEl.style.height = "auto";
+    sendEl.disabled = true;
+    hideSugg();
+    callNexi(text, false);
+  }
+
+  // ── API ────────────────────────────────────────────────
+  async function callNexi(text, isGreeting) {
+    isBusy = true;
+    sendEl.disabled = true;
+    const typingEl = addTyping();
+
+    try {
+      const res = await fetch("/api/nexi", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: text,
+          // For greeting, send empty history so Nexi introduces itself cleanly
+          history: isGreeting ? [] : history.slice(0, -1),
+        }),
+      });
+      const data = await res.json();
+      typingEl.remove();
+
+      const reply = data.reply || "Something went wrong. Please try again.";
+      addMsg("bot", reply);
+
+      if (!isGreeting) {
+        history.push({ role: "assistant", content: reply });
+        if (history.length > MAX_HIST * 2) history = history.slice(-MAX_HIST * 2);
+      }
+
+      if (!isOpen) { unread.textContent = "1"; unread.classList.add("show"); }
+
+    } catch (err) {
+      typingEl.remove();
+      addMsg("bot", "I'm having trouble connecting right now. Try again in a moment! 🔧");
+    }
+
+    isBusy = false;
+    sendEl.disabled = !inputEl.value.trim();
+  }
+
+  // ── Render ─────────────────────────────────────────────
+  function addMsg(role, text) {
+    const wrap = document.createElement("div");
+    wrap.className = "nexi-msg " + role;
+    const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+    if (role === "bot") {
+      wrap.innerHTML = `
+        <div class="nexi-msg-av">✦</div>
+        <div class="nexi-bub">${fmt(text)}</div>
+        <span class="nexi-msg-time">${time}</span>`;
+    } else {
+      wrap.innerHTML = `
+        <div class="nexi-bub">${esc(text)}</div>
+        <span class="nexi-msg-time">${time}</span>`;
+    }
+
+    msgsEl.appendChild(wrap);
+    msgsEl.scrollTo({ top: msgsEl.scrollHeight, behavior: "smooth" });
+    return wrap;
+  }
+
+  function addTyping() {
+    const wrap = document.createElement("div");
+    wrap.className = "nexi-msg bot";
+    wrap.innerHTML = `
+      <div class="nexi-msg-av">✦</div>
+      <div class="nexi-bub">
+        <div class="nexi-typing-dots">
+          <div class="nexi-typing-dot"></div>
+          <div class="nexi-typing-dot"></div>
+          <div class="nexi-typing-dot"></div>
+        </div>
+      </div>`;
+    msgsEl.appendChild(wrap);
+    msgsEl.scrollTo({ top: msgsEl.scrollHeight, behavior: "smooth" });
+    return wrap;
+  }
+
+  // Format Nexi's markdown-lite responses
+  function fmt(text) {
+    return esc(text)
+      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+      .replace(/\*(.*?)\*/g,     "<em>$1</em>")
+      .replace(/\n\n+/g, "</p><p>")
+      .replace(/\n/g,    "<br>")
+      .replace(/^/,      "<p>")
+      .replace(/$/,      "</p>");
+  }
+
+  function esc(t) {
+    return t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+
+  // Show unread badge after 6s if user hasn't opened chat
+  setTimeout(() => {
+    if (!isOpen) { unread.textContent = "1"; unread.classList.add("show"); }
+  }, 6000);
+
+})();
 </script>
 
 

@@ -2,468 +2,540 @@
 
 {% block content %}
 
-    <!-- 🧭 NAVBAR -->
-    <nav class="welcome-nav">
-        <div class="logo-container">
-            <svg class="logo-svg" viewBox="0 0 420 80" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                    <linearGradient id="watchGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stop-color="#7f5cff"/>
-                        <stop offset="100%" stop-color="#ec4899"/>
-                    </linearGradient>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/detail.css') }}">
 
-                    <filter id="glow">
-                        <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
-                        <feMerge>
-                            <feMergeNode in="coloredBlur"/>
-                            <feMergeNode in="SourceGraphic"/>
-                        </feMerge>
-                    </filter>
-                </defs>
-
-            <a href="{{ url_for('welcome') }}" class="logo-link">
-                <!-- WATCH -->
-                <text x="160" y="55" class="logo-watch">NextWatch</text>
-            </a>
-            </svg>
-        </div>
-
-        <div class="nav-right">
-
-           <!-- 🎯 ALWAYS VISIBLE -->
-            <a href="{{ url_for('home', type='anime') }}" class="logo-link">
-            <button class="anime-btn">
-                Animes
-            </button>
-            </a>
-
-            <!-- 🎯 ALWAYS VISIBLE -->
-             <a href="{{ url_for('home', type='movie') }}" class="logo-link">
-            <button class="movie-btn">
-                Movies
-            </button>
-            </a>
-
-            {% if user %}
-                <a href="{{ url_for('profile') }}" class="logo-link">
-                <img src="/static/{{ user.avatar_value }}" class="avatar">
-                </a>
-                <a href="/logout" class="nav-btn">Logout</a>
-            {% else %}
-                <a href="/login" class="nav-btn">Login</a>
-            {% endif %}
-        </div>
-    </nav>
-
-<section class="detail-hero"
-    style="background-image: url('{{ content.background_url }}');">
-</section>
-
-<section class="detail-container">
-    <div class="detail-poster">
-        <img src="{{ content.poster_url }}" alt="{{ content.title }}">
-    </div>
-
-    <div class="detail-info">
-        <h1>{{ content.title }}</h1>
-        <button
-            id="fav-btn"
-            data-content-id="{{ content.id }}"
-            class="fav-btn">
-            <span class="heart-icon">❤️</span>
-            <span class="fav-text">Add to Favorites</span>
-        </button>
-
-        <p class="description">{{ content.description }}</p>
-
-        <p><strong>Release Year:</strong> {{ content.release_year }}</p>
-
-        {% if content.type == 'anime' %}
-            <p><strong>Episodes:</strong> {{ content.episodes }}</p>
-        {% else %}
-            <p><strong>Duration:</strong> {{ content.duration }} mins</p>
-        {% endif %}
-
-        <p><strong>Genres:</strong> {{ content.genres }}</p>
-
-        {% if content.trailer_url %}
-            <iframe
-                width="560"
-                height="315"
-                src="{{ content.trailer_url }}"
-                frameborder="0"
-                allowfullscreen>
-            </iframe>
-        {% endif %}
-    </div>
-</section>
-
-<section class="reviews-section">
-    <h2>⭐ Reviews</h2>
-
-    {% if session.get("user_id") %}
-    <div class="review-form">
-        <div class="star-rating" id="starRating">
-            <span data-value="5">★</span>
-            <span data-value="4">★</span>
-            <span data-value="3">★</span>
-            <span data-value="2">★</span>
-            <span data-value="1">★</span>
-        </div>
-
-<input type="hidden" id="reviewRating" value="5">
-
-        <textarea id="reviewComment"
-                  placeholder="Write your thoughts..."></textarea>
-
-        <button id="submitReview">Submit Review</button>
-    </div>
+<!-- NAV -->
+<nav class="detail-nav">
+  <a href="{{ url_for('welcome') }}" class="nav-logo">NextWatch</a>
+  <div class="nav-actions">
+    <a href="{{ url_for('home', type='anime') }}" class="pill-btn anime-pill">Animes</a>
+    <a href="{{ url_for('home', type='movie') }}" class="pill-btn movie-pill">Movies</a>
+    {% if user %}
+      <a href="{{ url_for('profile') }}"><img src="/static/{{ user.avatar_value }}" class="nav-avatar"></a>
+      <a href="/logout" class="pill-btn">Logout</a>
     {% else %}
-        <p class="login-message">
-            Please <a href="/login">login</a> to write a review.
-        </p>
+      <a href="/login" class="pill-btn">Login</a>
     {% endif %}
-    
-    <div class="reviews-topbar">
-        <h3 class="reviews-count">User Reviews</h3>
+  </div>
+</nav>
 
-        <div class="review-sort-buttons">
-            <button data-sort="newest" class="active">Newest</button>
-            <button data-sort="highest">Highest Rated</button>
-            <button data-sort="lowest">Lowest Rated</button>
+<!-- HERO -->
+<div class="hero-backdrop">
+  <div class="hero-bg" id="heroBg"></div>
+  <div class="hero-vignette"></div>
+  <div class="hero-info">
+    <div class="hero-info-inner">
+      <div class="poster-wrap">
+        <img src="{{ content.poster_url }}" alt="{{ content.title }}">
+      </div>
+      <div class="title-block">
+        <div class="content-badges">
+          <span class="badge badge-type">{{ content.type | capitalize }}</span>
+          {% if content.genres %}
+            {% for g in content.genres.split(',')[:3] %}
+              <span class="badge badge-genre">{{ g.strip() | capitalize }}</span>
+            {% endfor %}
+          {% endif %}
         </div>
+        <h1 class="content-title">{{ content.title }}</h1>
+        <div class="meta-row">
+          {% if content.rating %}<div class="rating-badge">⭐ {{ content.rating }}</div><div class="meta-divider"></div>{% endif %}
+          {% if content.release_year %}<span class="meta-item">📅 {{ content.release_year }}</span><div class="meta-divider"></div>{% endif %}
+          {% if content.type == 'anime' and content.episodes %}<span class="meta-item">📺 {{ content.episodes }} eps</span>
+          {% elif content.type == 'movie' and content.duration %}<span class="meta-item">⏱ {{ content.duration }} min</span>{% endif %}
+        </div>
+        {% if content.description %}<p class="hero-description">{{ content.description[:280] }}</p>{% endif %}
+        <div class="cta-row">
+          <!-- ▶ Watch Now — opens streaming modal -->
+          <button class="btn-primary" id="watchNowBtn">▶ Watch Now</button>
+
+          {% if content.trailer_url %}
+            <button class="btn-ghost" onclick="switchTab('trailer')">🎬 Trailer</button>
+          {% endif %}
+
+          <button id="favBtnHero" class="fav-btn-hero" data-content-id="{{ content.id }}">
+            <span class="heart-icon">♡</span><span class="fav-text">Add to Favorites</span>
+          </button>
+
+          <button class="btn-ghost" onclick="switchTab('reviews')">💬 Reviews</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="content-body">
+  <div class="tabs-bar">
+    <div class="tabs-inner">
+      <button class="tab-btn active" data-tab="info">About</button>
+      {% if content.trailer_url %}<button class="tab-btn" data-tab="trailer">Trailer</button>{% endif %}
+      <button class="tab-btn" data-tab="reviews">Reviews</button>
+    </div>
+  </div>
+
+  <!-- INFO -->
+  <div class="tab-panel active" id="tab-info">
+    <div class="section-container">
+      <div class="info-grid">
+        <div class="reveal">
+          <p class="section-label">Synopsis</p>
+          <p class="full-description">{{ content.description or 'No description available.' }}</p>
+          {% if content.genres %}
+            <p class="section-label" style="margin-top:0">Genres</p>
+            <div class="genre-chips">
+              {% for g in content.genres.split(',') %}<span class="genre-chip">{{ g.strip() | capitalize }}</span>{% endfor %}
+            </div>
+          {% endif %}
+        </div>
+        <div class="reveal" style="transition-delay:0.15s">
+          <p class="section-label">Details</p>
+          <div class="stats-grid">
+            {% if content.rating %}<div class="stat-card"><p class="stat-label">Rating</p><p class="stat-value">{{ content.rating }}<span class="stat-unit">/ 10</span></p></div>{% endif %}
+            {% if content.release_year %}<div class="stat-card"><p class="stat-label">Year</p><p class="stat-value">{{ content.release_year }}</p></div>{% endif %}
+            {% if content.type == 'anime' and content.episodes %}<div class="stat-card"><p class="stat-label">Episodes</p><p class="stat-value">{{ content.episodes }}</p></div>{% endif %}
+            {% if content.type == 'movie' and content.duration %}<div class="stat-card"><p class="stat-label">Runtime</p><p class="stat-value">{{ content.duration }}<span class="stat-unit">min</span></p></div>{% endif %}
+            {% if content.views_count %}<div class="stat-card"><p class="stat-label">Popularity</p><p class="stat-value">{{ '{:,}'.format(content.views_count) }}</p></div>{% endif %}
+            <div class="stat-card"><p class="stat-label">Type</p><p class="stat-value" style="font-size:20px">{{ content.type | capitalize }}</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRAILER -->
+  {% if content.trailer_url %}
+  <div class="tab-panel" id="tab-trailer">
+    <div class="section-container">
+      <div class="reveal">
+        <p class="section-label" style="margin-bottom:24px">Official Trailer</p>
+        <div class="trailer-wrap"><div class="trailer-container">
+          <iframe src="{{ content.trailer_url }}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div></div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- REVIEWS -->
+  <div class="tab-panel" id="tab-reviews">
+    <div class="section-container">
+      <div class="reviews-top-section">
+        <div class="rating-summary reveal" id="ratingSummary">
+          <div class="avg-score-display">
+            <div class="avg-number" id="avgScore">—</div>
+            <div class="avg-stars" id="avgStars">☆☆☆☆☆</div>
+            <div class="avg-count" id="avgCount">No reviews yet</div>
+          </div>
+          <div class="rating-bars">
+            {% for n in [5,4,3,2,1] %}
+            <div class="rating-bar-row">
+              <span class="bar-label">{{ n }}</span>
+              <div class="bar-track"><div class="bar-fill" id="bar{{ n }}"></div></div>
+              <span class="bar-count" id="barCount{{ n }}">0</span>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="reveal" style="transition-delay:0.1s">
+          {% if session.get("user_id") %}
+          <div class="review-form-wrap">
+            <p class="form-heading">Leave a Review</p>
+            <div class="star-input" id="starInput">
+              {% for s in [1,2,3,4,5] %}<span data-value="{{ s }}">★</span>{% endfor %}
+            </div>
+            <input type="hidden" id="reviewRatingVal" value="0">
+            <textarea id="reviewCommentVal" class="review-textarea" placeholder="What did you think? Share your thoughts..."></textarea>
+            <button class="submit-review-btn" id="submitReviewBtn">Post Review</button>
+          </div>
+          {% else %}
+          <div class="login-nudge">Please <a href="/login">log in</a> to write a review.</div>
+          {% endif %}
+        </div>
+      </div>
+      <div class="reviews-feed-section">
+        <div class="reviews-controls reveal">
+          <span class="reviews-count-label" id="reviewsCountLabel">Loading…</span>
+          <div class="sort-group">
+            <button class="sort-chip active" data-sort="newest">Newest</button>
+            <button class="sort-chip" data-sort="highest">Top Rated</button>
+            <button class="sort-chip" data-sort="lowest">Critical</button>
+          </div>
+        </div>
+        <div class="reviews-list reveal" id="reviewsList" style="transition-delay:0.1s"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     MORE LIKE THIS — sits below the tab area, always visible
+============================================================ -->
+<div class="related-section" id="relatedSection">
+  <div class="related-header">
+    <div>
+      <span class="related-eyebrow">You might also like</span>
+      <h2 class="related-title">More Like This</h2>
+    </div>
+  </div>
+
+  <!-- Skeleton shown while loading -->
+  <div class="related-skeleton" id="relatedSkeleton">
+    {% for _ in range(7) %}<div class="skeleton-card"></div>{% endfor %}
+  </div>
+
+  <div class="related-row" id="relatedRow" style="display:none"></div>
+</div>
+
+<!-- ============================================================
+     WATCH NOW MODAL
+============================================================ -->
+<div class="watch-overlay" id="watchOverlay">
+  <div class="watch-modal">
+    <div class="watch-modal-accent"></div>
+
+    <div class="watch-modal-head">
+      <img src="{{ content.poster_url }}" class="watch-modal-poster" alt="">
+      <div class="watch-modal-title-block">
+        <p class="watch-modal-eyebrow">Available on</p>
+        <h2 class="watch-modal-title">{{ content.title }}</h2>
+        <p class="watch-modal-meta">
+          {{ content.type | capitalize }}
+          {% if content.release_year %} · {{ content.release_year }}{% endif %}
+          {% if content.rating %} · ⭐ {{ content.rating }}{% endif %}
+        </p>
+      </div>
+      <button class="watch-modal-close" id="watchModalClose">✕</button>
     </div>
 
-    <div id="reviewsContainer"></div>
+    <div class="watch-modal-divider"></div>
 
-</section>
+    <div class="watch-modal-body">
+      <p class="watch-modal-note">
+        <strong>We don't host content directly.</strong> These are platforms where
+        <em>{{ content.title }}</em> may be available depending on your region.
+        Availability can change — check each platform for current access.
+      </p>
+
+      <!-- Platform grid is injected by JS based on content.type -->
+      <div class="platform-grid" id="platformGrid"></div>
+    </div>
+
+    <div class="watch-modal-footer">
+      Availability varies by country · Content may require a subscription
+    </div>
+  </div>
+</div>
+
 
 <script>
-const contentId = {{ content.id | tojson }};
-</script>
-
-<script>
-const favBtn = document.getElementById("fav-btn");
-let isFavorite = false;
-
-// 🔹 initial status check
-fetch(`/api/favorites/status/${contentId}`)
-    .then(res => res.json())
-    .then(data => {
-        if (data.is_favorite) {
-            isFavorite = true;
-            favBtn.classList.add("active");
-            favBtn.textContent = "❤️ Remove from Favorites";
-        }
-    });
-
-favBtn.addEventListener("click", async () => {
-    const url = isFavorite
-        ? "/api/favorites/remove"
-        : "/api/favorites/add";
-
-    const response = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content_id: contentId })
-    });
-
-    const data = await response.json();
-
-    if (data.login_required) {
-        showLoginToast();
-        triggerShake();
-        return;
-    }
-
-    if (data.success) {
-        isFavorite = !isFavorite;
-        favBtn.classList.toggle("active");
-
-        const heart = favBtn.querySelector(".heart-icon");
-        const text = favBtn.querySelector(".fav-text");
-
-        // 🔥 force animation restart
-        heart.classList.remove("animate");
-        void heart.offsetWidth; // force reflow
-        heart.classList.add("animate");
-
-        text.textContent = isFavorite
-            ? "Remove from Favorites"
-            : "Add to Favorites";
-    }
-
-});
-
-// ================= REVIEWS =================
-document.addEventListener("DOMContentLoaded", () => {
-
+const contentId     = {{ content.id | tojson }};
+const contentType   = {{ content.type | tojson }};
 const currentUserId = {{ session.get("user_id") | tojson }};
+
+// ── Hero BG ──────────────────────────────────────────────────
+const heroBg = document.getElementById("heroBg");
+heroBg.style.backgroundImage = "url('{{ content.background_url or content.poster_url }}')";
+heroBg.style.backgroundSize  = "cover";
+heroBg.style.backgroundPosition = "center top";
+setTimeout(() => heroBg.classList.add("loaded"), 100);
+
+// ── Tabs ─────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+  document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+  const btn   = document.querySelector(`[data-tab="${name}"]`);
+  if (btn)   btn.classList.add("active");
+  const panel = document.getElementById(`tab-${name}`);
+  if (panel) { panel.classList.add("active"); triggerReveal(panel); }
+}
+document.querySelectorAll(".tab-btn").forEach(b => b.addEventListener("click", () => switchTab(b.dataset.tab)));
+
+// ── Scroll reveal ────────────────────────────────────────────
+function triggerReveal(root = document) {
+  root.querySelectorAll(".reveal:not(.visible)").forEach((el, i) => setTimeout(() => el.classList.add("visible"), i * 80));
+}
+const observer = new IntersectionObserver(entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add("visible"); }), { threshold: 0.1 });
+document.querySelectorAll(".reveal").forEach(el => observer.observe(el));
+
+// ── Favorites ────────────────────────────────────────────────
+const favBtn = document.getElementById("favBtnHero");
+let isFavorite = false;
+fetch(`/api/favorites/status/${contentId}`).then(r => r.json()).then(d => { if (d.is_favorite) setFavActive(true); });
+function setFavActive(state) {
+  isFavorite = state;
+  favBtn.classList.toggle("active", state);
+  favBtn.querySelector(".heart-icon").textContent = state ? "♥" : "♡";
+  favBtn.querySelector(".fav-text").textContent   = state ? "Saved" : "Add to Favorites";
+}
+favBtn.addEventListener("click", async () => {
+  const url = isFavorite ? "/api/favorites/remove" : "/api/favorites/add";
+  const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content_id: contentId }) });
+  const data = await res.json();
+  if (data.login_required) { showToast("🔒 Please log in first", "error"); return; }
+  if (data.success) setFavActive(!isFavorite);
+});
+
+// ── Stars ────────────────────────────────────────────────────
+let selectedRating = 0;
+const starInput   = document.getElementById("starInput");
+const ratingInput = document.getElementById("reviewRatingVal");
+if (starInput) {
+  starInput.querySelectorAll("span").forEach(s => {
+    s.addEventListener("mouseover",  () => highlightStars(s.dataset.value, starInput));
+    s.addEventListener("mouseleave", () => highlightStars(selectedRating, starInput));
+    s.addEventListener("click", () => {
+      selectedRating = parseInt(s.dataset.value);
+      ratingInput.value = selectedRating;
+      highlightStars(selectedRating, starInput);
+    });
+  });
+}
+function highlightStars(val, container) {
+  container.querySelectorAll("span").forEach(s => s.classList.toggle("lit", parseInt(s.dataset.value) <= parseInt(val)));
+}
+
+// ── Submit review ────────────────────────────────────────────
+const submitBtn = document.getElementById("submitReviewBtn");
+if (submitBtn) {
+  submitBtn.addEventListener("click", async () => {
+    const rating  = parseFloat(ratingInput.value);
+    const comment = document.getElementById("reviewCommentVal").value.trim();
+    if (!rating)  { showToast("⭐ Please select a star rating", "error"); return; }
+    if (!comment) { showToast("💬 Please write something", "error"); return; }
+    await fetch("/add-review", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content_id: contentId, rating, comment }) });
+    document.getElementById("reviewCommentVal").value = "";
+    selectedRating = 0; highlightStars(0, starInput); ratingInput.value = 0;
+    loadReviews(currentSort); showToast("✅ Review posted!", "success");
+  });
+}
+
+// ── Sort ─────────────────────────────────────────────────────
 let currentSort = "newest";
+document.querySelectorAll(".sort-chip").forEach(b => {
+  b.addEventListener("click", () => {
+    document.querySelectorAll(".sort-chip").forEach(x => x.classList.remove("active"));
+    b.classList.add("active"); currentSort = b.dataset.sort; loadReviews(currentSort);
+  });
+});
 
-function loadReviews() {
-
-    const sort = document.getElementById("reviewSort")?.value || "newest";
-
-    fetch(`/api/reviews/${contentId}?sort=${currentSort}`)
-        .then(res => res.json())
-        .then(data => {
-
-            const container = document.getElementById("reviewsContainer");
-            container.innerHTML = "";
-
-            data.forEach(r => {
-
-                const avatarUrl = r.avatar_type === "default"
-                    ? `/static/avatars/default/${r.avatar_value}`
-                    : `/static/${r.avatar_value}`;
-
-                const isOwner = currentUserId && r.user_id === currentUserId;
-
-                container.innerHTML += `
-                    <div class="review-card" data-id="${r.id}">
-
-                        <div class="review-header">
-
-                            <div class="review-left">
-                                <img src="${avatarUrl}" class="review-avatar">
-                                <span class="review-username">${r.username}</span>
-                            </div>
-
-                            <div class="review-right">
-
-                                <span class="review-rating">${r.rating} ⭐</span>
-
-                                ${isOwner ? `
-                                    <div class="review-actions">
-                                        <button class="edit-review-btn">✏</button>
-                                        <button class="delete-review-btn">🗑</button>
-                                    </div>
-                                ` : ""}
-
-                            </div>
-
-                        </div>
-
-                        <p class="review-comment">${r.comment || ""}</p>
-
-                    </div>
-                `;
-            });
-
-        });
-}
-
-const reviewSort = document.getElementById("reviewSort");
-
-if (reviewSort) {
-    reviewSort.addEventListener("change", () => {
-        loadReviews();
+// ── Load reviews ─────────────────────────────────────────────
+async function loadReviews(sort = "newest") {
+  const res  = await fetch(`/api/reviews/${contentId}?sort=${sort}`);
+  const data = await res.json();
+  const list  = document.getElementById("reviewsList");
+  const label = document.getElementById("reviewsCountLabel");
+  label.textContent = `${data.length} review${data.length !== 1 ? 's' : ''}`;
+  list.innerHTML = "";
+  if (!data.length) {
+    list.innerHTML = `<div class="empty-reviews"><div class="icon">💬</div><p>No reviews yet — be the first!</p></div>`;
+    updateRatingSummary([]); return;
+  }
+  updateRatingSummary(data);
+  data.forEach((r, i) => {
+    const avatarUrl = r.avatar_type === "default" ? `/static/avatars/default/${r.avatar_value}` : `/static/${r.avatar_value}`;
+    const isOwner   = currentUserId && r.user_id === currentUserId;
+    const stars     = [1,2,3,4,5].map(n => `<span ${n <= r.rating ? 'class="lit"' : ''}>★</span>`).join('');
+    const date      = r.created_at ? new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric', day: 'numeric' }) : '';
+    const card = document.createElement("div");
+    card.className = `review-card reveal${r.rating === 5 ? ' five-star' : ''}`;
+    card.dataset.id = r.id;
+    card.style.transitionDelay = `${i * 50}ms`;
+    card.innerHTML = `
+      <div class="review-header">
+        <img src="${avatarUrl}" class="review-avatar">
+        <div class="review-user-block"><div class="review-username">${r.username}</div><div class="review-date">${date}</div></div>
+        <div class="review-stars">${stars}</div>
+      </div>
+      <p class="review-text">${r.comment || ''}</p>
+      ${isOwner ? `<div class="review-actions-row"><button class="action-chip edit-btn">✏ Edit</button><button class="action-chip delete delete-btn">🗑 Delete</button></div>` : ''}`;
+    list.appendChild(card);
+    setTimeout(() => card.classList.add("visible"), i * 60);
+  });
+  list.querySelectorAll(".delete-btn").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const card = btn.closest(".review-card");
+      if (!confirm("Delete this review?")) return;
+      const res = await fetch(`/delete-review/${card.dataset.id}`, { method: "POST" });
+      const d   = await res.json();
+      if (d.success) { card.style.opacity = "0"; setTimeout(() => { card.remove(); loadReviews(currentSort); }, 300); }
     });
-}
-
-loadReviews();
-
-document.querySelectorAll(".review-sort-buttons button")
-.forEach(btn => {
-
+  });
+  list.querySelectorAll(".edit-btn").forEach(btn => {
     btn.addEventListener("click", () => {
-
-        document
-        .querySelectorAll(".review-sort-buttons button")
-        .forEach(b => b.classList.remove("active"));
-
-        btn.classList.add("active");
-
-        currentSort = btn.dataset.sort;
-
-        loadReviews();
-
+      const card     = btn.closest(".review-card");
+      const reviewId = card.dataset.id;
+      const oldComment = card.querySelector(".review-text").textContent.trim();
+      const litCount   = card.querySelectorAll(".review-stars .lit").length;
+      card.querySelector(".review-actions-row").style.display = "none";
+      card.querySelector(".review-text").style.display = "none";
+      let editRating = litCount;
+      const ef = document.createElement("div");
+      ef.className = "edit-form-inline";
+      ef.innerHTML = `
+        <div class="edit-stars-row">${[1,2,3,4,5].map(n => `<span class="edit-star-item${n<=litCount?' active':''}" data-value="${n}">★</span>`).join('')}</div>
+        <textarea class="edit-textarea-inline">${oldComment}</textarea>
+        <div class="edit-btn-row"><button class="save-edit-btn">Save</button><button class="cancel-edit-btn">Cancel</button></div>`;
+      card.appendChild(ef);
+      ef.querySelectorAll(".edit-star-item").forEach(s => s.addEventListener("click", () => {
+        editRating = parseInt(s.dataset.value);
+        ef.querySelectorAll(".edit-star-item").forEach(x => x.classList.toggle("active", parseInt(x.dataset.value) <= editRating));
+      }));
+      ef.querySelector(".cancel-edit-btn").addEventListener("click", () => loadReviews(currentSort));
+      ef.querySelector(".save-edit-btn").addEventListener("click", async () => {
+        const res = await fetch(`/edit-review/${reviewId}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ comment: ef.querySelector(".edit-textarea-inline").value, rating: editRating }) });
+        const d = await res.json(); if (d.success) loadReviews(currentSort);
+      });
     });
-
-});
-
-
-// ================= CLICK HANDLER =================
-
-document.addEventListener("click", async function(e) {
-
-    // ================= DELETE REVIEW =================
-
-    if (e.target.classList.contains("delete-review-btn")) {
-
-        const card = e.target.closest(".review-card");
-        const reviewId = card.dataset.id;
-
-        if (!confirm("Delete this review?")) return;
-
-        const res = await fetch(`/delete-review/${reviewId}`, {
-            method: "POST"
-        });
-
-        const data = await res.json();
-
-        if (data.success) {
-            card.remove();
-        }
-
-    }
-
-
-    // ================= EDIT REVIEW =================
-
-    if (e.target.classList.contains("edit-review-btn")) {
-
-        const card = e.target.closest(".review-card");
-        const commentEl = card.querySelector(".review-comment");
-
-        const oldComment = commentEl.textContent.trim();
-
-        const currentRating = parseFloat(
-            card.querySelector(".review-rating").textContent
-        );
-
-        commentEl.innerHTML = `
-            <div class="edit-review-ui">
-
-                <div class="edit-stars">
-                    ${[1,2,3,4,5].map(i => `
-                        <span class="edit-star ${i <= currentRating ? "active" : ""}" data-value="${i}">
-                            ★
-                        </span>
-                    `).join("")}
-                </div>
-
-                <textarea class="edit-textarea">${oldComment}</textarea>
-
-                <div class="edit-actions">
-                    <button class="save-edit">Save</button>
-                    <button class="cancel-edit">Cancel</button>
-                </div>
-
-            </div>
-        `;
-
-        // ⭐ STAR CLICK LOGIC
-
-        const stars = card.querySelectorAll(".edit-star");
-
-        stars.forEach(star => {
-
-            star.addEventListener("click", () => {
-
-                const value = star.dataset.value;
-
-                stars.forEach(s => {
-                    s.classList.toggle("active", s.dataset.value <= value);
-                });
-
-            });
-
-        });
-
-        // ⌨ ENTER TO SAVE
-
-        const textarea = card.querySelector(".edit-textarea");
-
-        textarea.addEventListener("keydown", function(ev) {
-
-            if (ev.key === "Enter" && !ev.shiftKey) {
-                ev.preventDefault();
-                card.querySelector(".save-edit").click();
-            }
-
-        });
-
-    }
-
-
-    // ================= CANCEL EDIT =================
-
-    if (e.target.classList.contains("cancel-edit")) {
-        loadReviews();
-    }
-
-
-    // ================= SAVE EDIT =================
-
-    if (e.target.classList.contains("save-edit")) {
-
-        const card = e.target.closest(".review-card");
-        const reviewId = card.dataset.id;
-
-        const newComment = card.querySelector(".edit-textarea").value;
-
-        const activeStars = card.querySelectorAll(".edit-star.active");
-        const rating = activeStars.length;
-
-        const res = await fetch(`/edit-review/${reviewId}`, {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({
-                comment: newComment,
-                rating: rating
-            })
-        });
-
-        const data = await res.json();
-
-        if (data.success) {
-            loadReviews();
-        }
-
-    }
-
-});
-
-const reviewBtn = document.getElementById("submitReview");
-if (reviewBtn) {
-    reviewBtn.addEventListener("click", async () => {
-        await fetch("/add-review", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({
-                content_id: contentId,
-                rating: parseFloat(document.getElementById("reviewRating").value),
-                comment: document.getElementById("reviewComment").value
-            })
-        });
-
-        document.getElementById("reviewComment").value = "";
-        loadReviews();
-    });
+  });
 }
 
-// ===== STAR RATING INTERACTION =====
-
-const stars = document.querySelectorAll("#starRating span");
-const ratingInput = document.getElementById("reviewRating");
-
-if (stars.length > 0) {
-    stars.forEach(star => {
-        star.addEventListener("click", () => {
-            const value = star.dataset.value;
-            ratingInput.value = value;
-
-            stars.forEach(s => {
-                s.classList.toggle(
-                    "active",
-                    s.dataset.value <= value
-                );
-            });
-        });
-    });
-
-    // default highlight
-    stars.forEach(s => {
-        if (s.dataset.value <= ratingInput.value) {
-            s.classList.add("active");
-        }
-    });
+function updateRatingSummary(reviews) {
+  const avgEl = document.getElementById("avgScore"), starsEl = document.getElementById("avgStars"), countEl = document.getElementById("avgCount");
+  if (!reviews.length) { avgEl.textContent = "—"; starsEl.textContent = "☆☆☆☆☆"; countEl.textContent = "No reviews yet"; return; }
+  const avg = reviews.reduce((s, r) => s + r.rating, 0) / reviews.length;
+  avgEl.textContent   = avg.toFixed(1);
+  countEl.textContent = `${reviews.length} review${reviews.length !== 1 ? 's' : ''}`;
+  const filled = Math.round(avg); starsEl.textContent = "★".repeat(filled) + "☆".repeat(5 - filled);
+  const counts = {1:0,2:0,3:0,4:0,5:0};
+  reviews.forEach(r => { const k = Math.round(r.rating); counts[k] = (counts[k]||0)+1; });
+  const max = Math.max(...Object.values(counts), 1);
+  [1,2,3,4,5].forEach(n => {
+    const b = document.getElementById(`bar${n}`), c = document.getElementById(`barCount${n}`);
+    if (b) b.style.width = `${(counts[n]/max)*100}%`; if (c) c.textContent = counts[n];
+  });
 }
+
+function showToast(msg, type = "success") {
+  const t = document.createElement("div");
+  t.className = `toast ${type === "error" ? "error-toast" : "success-toast"}`;
+  t.textContent = msg; document.body.appendChild(t);
+  setTimeout(() => t.classList.add("show"), 50);
+  setTimeout(() => { t.classList.remove("show"); setTimeout(() => t.remove(), 400); }, 3000);
+}
+
+// ── Init ─────────────────────────────────────────────────────
+loadReviews();
+document.querySelectorAll("#tab-info .reveal").forEach((el, i) => setTimeout(() => el.classList.add("visible"), 400 + i * 100));
+
+
+// ============================================================
+//  MORE LIKE THIS
+// ============================================================
+async function loadRelated() {
+  const res  = await fetch(`/api/related/${contentId}`);
+  const data = await res.json();
+
+  document.getElementById("relatedSkeleton").style.display = "none";
+  const row = document.getElementById("relatedRow");
+
+  if (!data.length) {
+    document.getElementById("relatedSection").style.display = "none";
+    return;
+  }
+
+  row.style.display = "flex";
+
+  data.forEach((item, i) => {
+    const a = document.createElement("a");
+    a.href      = `/content/${item.id}`;
+    a.className = "related-card";
+    a.style.animationDelay = `${i * 40}ms`;
+
+    a.innerHTML = `
+      <img src="${item.poster_url}" alt="${item.title}" loading="lazy">
+      <div class="related-card-info">
+        <div class="related-card-title">${item.title}</div>
+        <div class="related-card-meta">
+          <span class="related-card-year">${item.release_year || ''}</span>
+          ${item.rating ? `<span class="related-card-rating">★ ${item.rating}</span>` : ''}
+        </div>
+      </div>`;
+
+    row.appendChild(a);
+
+    // Stagger entrance
+    a.style.opacity   = "0";
+    a.style.transform = "translateY(12px)";
+    a.style.transition = `opacity 0.4s ease, transform 0.4s ease`;
+    setTimeout(() => {
+      a.style.opacity   = "1";
+      a.style.transform = "translateY(0)";
+    }, 100 + i * 50);
+  });
+}
+
+loadRelated();
+
+
+// ============================================================
+//  WATCH NOW MODAL — platform quick links
+// ============================================================
+
+// Platform definitions — add/remove as needed, keyed by content type
+const PLATFORMS = {
+  anime: [
+    { name: "Crunchyroll",   sub: "Best for anime",        icon: "🍊", cls: "plt-crunchyroll", url: "https://www.crunchyroll.com/search?q=" },
+    { name: "Netflix",       sub: "Select titles",         icon: "🎬", cls: "plt-netflix",     url: "https://www.netflix.com/search?q=" },
+    { name: "Prime Video",   sub: "With subscription",     icon: "📦", cls: "plt-prime",       url: "https://www.primevideo.com/search/ref=atv_sr_sug_4?phrase=" },
+    { name: "Funimation",    sub: "Dubbed & subbed",       icon: "🎌", cls: "plt-funimation",  url: "https://www.funimation.com/search/?q=" },
+    { name: "Hotstar",       sub: "Some anime available",  icon: "⭐", cls: "plt-hotstar",     url: "https://www.hotstar.com/in/search?q=" },
+    { name: "JioCinema",     sub: "Free with Jio",         icon: "📱", cls: "plt-jio",         url: "https://www.jiocinema.com/search?q=" },
+  ],
+  movie: [
+    { name: "Netflix",       sub: "Stream now",            icon: "🎬", cls: "plt-netflix",     url: "https://www.netflix.com/search?q=" },
+    { name: "Prime Video",   sub: "Rent or stream",        icon: "📦", cls: "plt-prime",       url: "https://www.primevideo.com/search/ref=atv_sr_sug_4?phrase=" },
+    { name: "Hotstar",       sub: "Disney+ Hotstar",       icon: "⭐", cls: "plt-hotstar",     url: "https://www.hotstar.com/in/search?q=" },
+    { name: "JioCinema",     sub: "Free with Jio",         icon: "📱", cls: "plt-jio",         url: "https://www.jiocinema.com/search?q=" },
+    { name: "ZEE5",          sub: "Hindi & regional",      icon: "🎭", cls: "plt-zee",         url: "https://www.zee5.com/search?q=" },
+    { name: "Apple TV+",     sub: "Select titles",         icon: "🍎", cls: "plt-apple",       url: "https://tv.apple.com/search?term=" },
+  ],
+};
+
+const watchOverlay   = document.getElementById("watchOverlay");
+const watchModalClose = document.getElementById("watchModalClose");
+const platformGrid   = document.getElementById("platformGrid");
+const titleEncoded   = encodeURIComponent("{{ content.title }}");
+
+// Build platform buttons
+function buildPlatformGrid() {
+  const platforms = PLATFORMS[contentType] || PLATFORMS.movie;
+  platformGrid.innerHTML = "";
+
+  platforms.forEach(p => {
+    const a = document.createElement("a");
+    a.href      = p.url + titleEncoded;
+    a.target    = "_blank";
+    a.rel       = "noopener noreferrer";
+    a.className = `platform-btn ${p.cls}`;
+    a.innerHTML = `
+      <span class="platform-icon">${p.icon}</span>
+      <div class="platform-info">
+        <div class="platform-name">${p.name}</div>
+        <div class="platform-sub">${p.sub}</div>
+      </div>`;
+    platformGrid.appendChild(a);
+  });
+}
+
+buildPlatformGrid();
+
+// Open modal
+document.getElementById("watchNowBtn").addEventListener("click", () => {
+  watchOverlay.classList.add("open");
+  document.body.style.overflow = "hidden";
 });
 
+// Close modal
+function closeWatchModal() {
+  watchOverlay.classList.remove("open");
+  document.body.style.overflow = "";
+}
+
+watchModalClose.addEventListener("click", closeWatchModal);
+watchOverlay.addEventListener("click", e => { if (e.target === watchOverlay) closeWatchModal(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeWatchModal(); });
 </script>
-
 
 {% endblock %}

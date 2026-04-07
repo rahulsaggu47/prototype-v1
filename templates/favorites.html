@@ -1,83 +1,190 @@
 {% extends "base.html" %}
 {% block content %}
 
-<link rel="stylesheet" href="{{ url_for('static', filename='css/favorites.css') }}">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/favorites.css">
 
-    <!-- 🧭 NAVBAR -->
-    <nav class="welcome-nav">
-        <div class="logo-container">
-            <svg class="logo-svg" viewBox="0 0 420 80" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                    <linearGradient id="watchGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stop-color="#7f5cff"/>
-                        <stop offset="100%" stop-color="#ec4899"/>
-                    </linearGradient>
+<!-- NAV -->
+<nav class="fav-nav">
+  <a href="{{ url_for('welcome') }}" class="fav-logo">NextWatch</a>
+  <div class="fav-nav-right">
+    <a href="{{ url_for('home', type='anime') }}" class="fav-pill anime-p">Animes</a>
+    <a href="{{ url_for('home', type='movie') }}" class="fav-pill movie-p">Movies</a>
+    {% if user %}
+      <a href="{{ url_for('profile') }}"><img src="/static/{{ user.avatar_value }}" class="fav-nav-av"></a>
+      <a href="/logout" class="fav-pill">Logout</a>
+    {% else %}
+      <a href="/login" class="fav-pill">Login</a>
+    {% endif %}
+  </div>
+</nav>
 
-                    <filter id="glow">
-                        <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
-                        <feMerge>
-                            <feMergeNode in="coloredBlur"/>
-                            <feMergeNode in="SourceGraphic"/>
-                        </feMerge>
-                    </filter>
-                </defs>
+<div class="fav-page">
 
-            <a href="{{ url_for('welcome') }}" class="logo-link">
-                <!-- WATCH -->
-                <text x="160" y="55" class="logo-watch">NextWatch</text>
-            </a>
-            </svg>
+  <!-- HEADER -->
+  <div class="fav-header">
+    <div class="fav-header-inner">
+      <div class="fav-title-block">
+        <div class="fav-eyebrow">
+          <span class="fav-eyebrow-line"></span>
+          Your Collection
         </div>
-
-        <div class="nav-right">
-
-           <!-- 🎯 ALWAYS VISIBLE -->
-            <a href="{{ url_for('home', type='anime') }}" class="logo-link">
-            <button class="anime-btn">
-                Animes
-            </button>
-            </a>
-
-            <!-- 🎯 ALWAYS VISIBLE -->
-             <a href="{{ url_for('home', type='movie') }}" class="logo-link">
-            <button class="movie-btn">
-                Movies
-            </button>
-            </a>
-
-            {% if user %}
-                <a href="{{ url_for('profile') }}" class="logo-link">
-                <img src="/static/{{ user.avatar_value }}" class="avatar">
-                </a>
-                <a href="/logout" class="nav-btn">Logout</a>
-            {% else %}
-                <a href="/login" class="nav-btn">Login</a>
-            {% endif %}
+        <h1 class="fav-page-title">Your <span class="accent-word">Favorites</span></h1>
+        <div class="fav-count-badge">
+          <span class="fav-count-num" id="totalCount">—</span>
+          <span>saved titles</span>
         </div>
-    </nav>
+      </div>
+    </div>
+  </div>
 
-<section class="favorites-page">
+  <!-- FILTER BAR -->
+  <div class="fav-filter-bar">
+    <div class="filter-chips">
+      <button class="fav-chip active" data-type="all">All</button>
+      <button class="fav-chip anime" data-type="anime">🎌 Anime</button>
+      <button class="fav-chip movie" data-type="movie">🎬 Movies</button>
+    </div>
+    <div class="fav-sort">
+      <span class="sort-label">Sort by</span>
+      <select class="fav-sort-select" id="sortSelect">
+        <option value="default">Recently Added</option>
+        <option value="az">A → Z</option>
+        <option value="za">Z → A</option>
+        <option value="rating">Top Rated</option>
+      </select>
+    </div>
+  </div>
 
-    <header class="favorites-header">
-        <h1>❤️ Your Favorites</h1>
-        <p>Everything you’ve saved, in one place</p>
-    </header>
+  <div class="fav-divider"></div>
 
-    <div class="favorites-filters">
-        <button data-type="all" class="active">All</button>
-        <button data-type="anime">Anime</button>
-        <button data-type="movie">Movies</button>
+  <!-- GRID -->
+  <div class="fav-grid-wrap">
+    <div id="loadingState" class="fav-loading">
+      <div class="loading-dot"></div>
+      <div class="loading-dot"></div>
+      <div class="loading-dot"></div>
     </div>
 
-    <div id="favoritesGrid" class="content-grid"></div>
+    <div class="fav-grid" id="favGrid" style="display:none"></div>
 
-    <div id="favoritesEmpty" class="empty-state hidden">
-        <p>💔 No favorites yet</p>
-        <span>Save anime and movies you love, and they’ll show up here.</span>
+    <div class="fav-empty" id="emptyState">
+      <div class="empty-orbit">
+        <div class="empty-orbit-ring"></div>
+        <div class="empty-orbit-ring"></div>
+        <div class="empty-orbit-center">💔</div>
+      </div>
+      <h2 class="empty-title">Nothing here yet</h2>
+      <p class="empty-sub">You haven't saved any favorites yet. Explore and hit the heart on anything that catches your eye.</p>
+      <a href="/" class="empty-cta">✦ Start Exploring</a>
     </div>
+  </div>
 
-</section>
+</div>
 
-<script src="{{ url_for('static', filename='js/favorites.js') }}"></script>
+<script>
+let allFavorites = [];
+let currentType = "all";
+let currentSort = "default";
+
+async function loadFavorites() {
+  const res  = await fetch("/api/favorites");
+  const data = await res.json();
+
+  document.getElementById("loadingState").style.display = "none";
+  document.getElementById("favGrid").style.display = "block";
+
+  allFavorites = data;
+  renderFavorites();
+}
+
+function renderFavorites() {
+  const grid = document.getElementById("favGrid");
+  const empty = document.getElementById("emptyState");
+  const countEl = document.getElementById("totalCount");
+
+  let items = [...allFavorites];
+
+  // Filter
+  if (currentType !== "all") {
+    items = items.filter(i => i.type === currentType);
+  }
+
+  // Sort
+  if (currentSort === "az")     items.sort((a,b) => a.title.localeCompare(b.title));
+  if (currentSort === "za")     items.sort((a,b) => b.title.localeCompare(a.title));
+  if (currentSort === "rating") items.sort((a,b) => (b.rating||0) - (a.rating||0));
+
+  countEl.textContent = items.length;
+  grid.innerHTML = "";
+
+  if (!items.length) {
+    empty.classList.add("show");
+    return;
+  }
+
+  empty.classList.remove("show");
+
+  items.forEach((item, idx) => {
+    const card = document.createElement("div");
+    card.className = "fav-card";
+    card.dataset.id = item.id;
+    card.style.animationDelay = `${Math.min(idx * 0.05, 0.5)}s`;
+
+    card.innerHTML = `
+      <div class="fav-type-badge badge-${item.type}">${item.type}</div>
+      <img src="${item.poster_url}" alt="${item.title}" loading="lazy">
+      <div class="fav-card-overlay">
+        <div class="fav-card-title">${item.title}</div>
+        <div class="fav-card-meta">
+          <span class="fav-card-type">${item.release_year || ''}</span>
+          <button class="fav-remove-btn" title="Remove from favorites" data-id="${item.id}">✕</button>
+        </div>
+      </div>
+    `;
+
+    // Navigate on card click (not remove button)
+    card.addEventListener("click", (e) => {
+      if (e.target.classList.contains("fav-remove-btn")) return;
+      window.location.href = `/content/${item.id}`;
+    });
+
+    // Remove
+    card.querySelector(".fav-remove-btn").addEventListener("click", async (e) => {
+      e.stopPropagation();
+      card.classList.add("removing");
+      await fetch("/api/favorites/remove", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content_id: item.id })
+      });
+      setTimeout(() => {
+        allFavorites = allFavorites.filter(f => f.id !== item.id);
+        renderFavorites();
+      }, 300);
+    });
+
+    grid.appendChild(card);
+  });
+}
+
+// Filters
+document.querySelectorAll(".fav-chip").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".fav-chip").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    currentType = btn.dataset.type;
+    renderFavorites();
+  });
+});
+
+// Sort
+document.getElementById("sortSelect").addEventListener("change", function() {
+  currentSort = this.value;
+  renderFavorites();
+});
+
+loadFavorites();
+</script>
 
 {% endblock %}

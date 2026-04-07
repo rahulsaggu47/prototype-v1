@@ -246,7 +246,7 @@ if (rzpBtn) {
       const res  = await fetch(`/create-order/${plan}`);
       const data = await res.json();
       new Razorpay({
-        key: "rzp_test_ST2BdDGg6Z5fxw",
+        key: "{{ razorpay_key_id }}",
         amount: data.amount, currency: "INR",
         name: "NextWatch", description: "Premium Subscription",
         order_id: data.order_id,

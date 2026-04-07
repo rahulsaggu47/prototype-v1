@@ -208,7 +208,8 @@
 
 .footer-made-with {
   font-size: 12px;
-  color: var(--f-muted);
+  color: #ffffff5a;
+  /* color: var(--f-muted); */
   display: flex;
   align-items: center;
   gap: 6px;

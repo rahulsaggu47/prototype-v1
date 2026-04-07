@@ -1,0 +1,57 @@
+{% extends "admin/dashboard.html" %}
+{% block content %}
+
+<style>
+.logs-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.logs-table th {
+  padding: 10px 14px; text-align: left;
+  background: rgba(255,255,255,0.04); border-bottom: 1px solid rgba(255,255,255,0.08);
+  color: #6b7280; font-weight: 600; letter-spacing: 1px; font-size: 11px; text-transform: uppercase;
+}
+.logs-table td {
+  padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.05);
+  vertical-align: top; color: #c8ccd8;
+}
+.logs-table tr:hover td { background: rgba(255,255,255,0.02); }
+.log-user { font-weight: 600; color: #a78bfa; }
+.log-guest { color: #6b7280; font-style: italic; }
+.log-msg { max-width: 280px; }
+.log-reply { max-width: 340px; color: #9ca3af; }
+.log-time { white-space: nowrap; color: #52556a; font-size: 12px; }
+</style>
+
+<h1 style="margin-bottom:24px">💬 Nexi Chat Logs</h1>
+<p style="color:#6b7280;margin-bottom:28px;font-size:14px">Last 200 conversations</p>
+
+{% if logs %}
+<table class="logs-table">
+  <thead>
+    <tr>
+      <th>User</th>
+      <th>Message</th>
+      <th>Nexi Reply</th>
+      <th>Time</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for log in logs %}
+    <tr>
+      <td>
+        {% if log.username %}
+          <span class="log-user">{{ log.username }}</span>
+        {% else %}
+          <span class="log-guest">Guest</span>
+        {% endif %}
+      </td>
+      <td class="log-msg">{{ log.user_message }}</td>
+      <td class="log-reply">{{ log.bot_response[:200] }}{% if log.bot_response|length > 200 %}…{% endif %}</td>
+      <td class="log-time">{{ log.timestamp }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+  <p style="color:#6b7280">No conversations yet.</p>
+{% endif %}
+
+{% endblock %}

@@ -2,434 +2,286 @@
 
 {% block content %}
 
-<head>
-    <link rel="stylesheet" href="/static/css/profile.css">
-</head>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
 
-    <!-- 🧭 NAVBAR -->
-    <nav class="welcome-nav">
-        <div class="logo-container">
-            <svg class="logo-svg" viewBox="0 0 420 80" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                    <linearGradient id="watchGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stop-color="#7f5cff"/>
-                        <stop offset="100%" stop-color="#ec4899"/>
-                    </linearGradient>
+<nav class="p-nav">
+  <a href="{{ url_for('welcome') }}" class="p-nav-logo">NextWatch</a>
+  <div class="p-nav-right">
+    <a href="{{ url_for('home', type='anime') }}" class="p-pill anime-p">Animes</a>
+    <a href="{{ url_for('home', type='movie') }}" class="p-pill movie-p">Movies</a>
+    {% if user %}
+      <a href="{{ url_for('profile') }}"><img src="{% if user.avatar_type == 'default' %}{{ url_for('static', filename='avatars/default/' + user.avatar_value) }}{% else %}{{ url_for('static', filename=user.avatar_value) }}{% endif %}" class="p-avatar-sm"></a>
+      <a href="/logout" class="p-pill">Logout</a>
+    {% endif %}
+  </div>
+</nav>
 
-                    <filter id="glow">
-                        <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
-                        <feMerge>
-                            <feMergeNode in="coloredBlur"/>
-                            <feMergeNode in="SourceGraphic"/>
-                        </feMerge>
-                    </filter>
-                </defs>
+<div class="profile-page">
 
-            <a href="{{ url_for('welcome') }}" class="logo-link">
-                <!-- WATCH -->
-                <text x="160" y="55" class="logo-watch">NextWatch</text>
-            </a>
-            </svg>
+  <!-- HERO -->
+  <div class="profile-hero">
+    <div class="profile-hero-inner">
+
+      <div class="profile-avatar-wrap" id="avatarWrap">
+        <div class="profile-avatar-ring">
+          <img src="{% if user.avatar_type == 'default' %}{{ url_for('static', filename='avatars/default/' + user.avatar_value) }}{% else %}{{ url_for('static', filename=user.avatar_value) }}{% endif %}" class="profile-avatar-img" id="currentAvatar">
         </div>
+        <div class="avatar-edit-overlay" onclick="openAvatarModal()">✏️</div>
+      </div>
 
-        <div class="nav-right">
-
-           <!-- 🎯 ALWAYS VISIBLE -->
-            <a href="{{ url_for('home', type='anime') }}" class="logo-link">
-            <button class="anime-btn">
-                Animes
-            </button>
-            </a>
-
-            <!-- 🎯 ALWAYS VISIBLE -->
-             <a href="{{ url_for('home', type='movie') }}" class="logo-link">
-            <button class="movie-btn">
-                Movies
-            </button>
-            </a>
-
-            {% if user %}
-                <a href="{{ url_for('profile') }}" class="logo-link">
-                <img src="/static/{{ user.avatar_value }}" class="avatar">
-                </a>
-                <a href="/logout" class="nav-btn">Logout</a>
-            {% else %}
-                <a href="/login" class="nav-btn">Login</a>
-            {% endif %}
-        </div>
-    </nav>
-    
-<section class="profile-container">
-    
-    <div class="profile-header">
-        <div class="profile-avatar">
-            <img src="{% if user.avatar_type == 'default' %}
-                {{ url_for('static', filename='avatars/default/' + user.avatar_value) }}
-            {% else %}
-                {{ url_for('static', filename=user.avatar_value) }}
-            {% endif %}">
-        </div>
-
-        <h2>{{ user.username }}</h2>
-        <p class="join-date">
-            {% if user["is_premium"] %}
-                <span class="premium-badge">⭐ Premium Member</span>
-            {% else %}
-                Member of NextWatch
-            {% endif %}
-        </p>
-
-        <button class="edit-avatar-btn">Edit Avatar</button>
-    </div>
-
-
-    <!-- Avatar Modal -->
-<div class="avatar-modal" id="avatarModal">
-    <div class="avatar-modal-content">
-
-        <!-- Tab Header -->
-        <div class="avatar-tabs">
-            <button class="avatar-tab active" data-tab="defaultTab">
-                Select Your Avatar
-            </button>
-            <button class="avatar-tab" data-tab="uploadTab">
-                Upload Your Own Avatar
-            </button>
-        </div>
-
-        <!-- DEFAULT TAB -->
-        <div class="avatar-tab-content active" id="defaultTab">
-               
-            {% set avatars = [
-                "anime_boy_1.jpeg","anime_boy_2.jpeg","anime_boy_3.jpeg",
-                "anime_girl_1.jpeg","anime_girl_2.jpeg","anime_girl_3.jpeg",
-                "anime_boy_4.jpeg","iron_man.png","thor.png",
-                "spooderman.png","hulk.png","cmarvel.png"
-            ] %}
-
-            <div class="avatar-grid">
-                {% for avatar in avatars %}
-                    <img src="{{ url_for('static', filename='avatars/default/' + avatar) }}"
-                         class="avatar-option"
-                         data-avatar="{{ avatar }}">
-                {% endfor %}
-            </div>
-
-        </div>
-
-        <!-- UPLOAD TAB -->
-        <div class="avatar-tab-content" id="uploadTab">
-
-            <div class="upload-area" id="uploadArea">
-                <p>Click to upload image here</p>
-                <input type="file" id="avatarInput" accept="image/*" hidden>
-            </div>
-
-        </div>
-
-        <button onclick="closeAvatarModal()" class="cancel-btn">
-            Cancel
-        </button>
-
-    </div>
-</div>
-
-<div class="switch-world-section">
-
-    <h3>Switch Worlds</h3>
-    <h6>(Your default login page)</h6>
-    <!-- <h4>Currently Exploring: <span class="current-world">{{ user.preferred_world|capitalize }}</span></h4> -->
-
-    <div class="world-switch">
-        <a href="/set-world/anime" class="world-btn {% if user.preferred_world == 'anime' %}active{% endif %}">
-            Animes
-        </a>
-        <a href="/set-world/movie" class="world-btn {% if user.preferred_world == 'movie' %}active{% endif %}">
-            Movies
-        </a>
-    </div>
-
-</div>
-
-    <div class="profile-section">
-        <h3>⭐ Your Favorites</h3>
-
-        <div class="favorites-row">
-            {% if favorites %}
-                {% for item in favorites %}
-                    <a href="{{ url_for('content_detail', content_id=item.id) }}" class="favorite-card">
-                        <img src="{{ item.poster_url }}" alt="{{ item.title }}">
-                    </a>
-                {% endfor %}
-            {% else %}
-                <p class="empty-message">You haven't added any favorites yet.</p>
-            {% endif %}
-        </div>
-    </div>
-
-    {% if top_rated %}
-    <div class="profile-section">
-
-        <h3>⭐ Your Top Rated</h3>
-
-        <div class="top-rated-row">
-
-            {% for item in top_rated %}
-
-            <a href="{{ url_for('content_detail', content_id=item.content_id) }}"
-               class="top-rated-card">
-
-                <img src="{{ item.poster_url }}">
-
-                <div class="top-rated-rating">
-                    ⭐ {{ item.rating }}
-                </div>
-            </a>
+      <div class="profile-meta">
+        <h1 class="profile-username">{{ user.username }}</h1>
+        <div class="profile-badges">
+          {% if user.is_premium %}
+            <span class="profile-badge badge-premium">⭐ Premium</span>
+          {% endif %}
+          <span class="profile-badge badge-member">NextWatch Member</span>
+          {% if user.preferred_genres %}
+            {% for g in user.preferred_genres.split(',')[:2] %}
+              <span class="profile-badge" style="background:rgba(236,72,153,0.1);border:1px solid rgba(236,72,153,0.25);color:#f9a8d4;font-size:10px;letter-spacing:1px;padding:5px 12px;border-radius:8px;font-weight:700;text-transform:uppercase">{{ g.strip() }}</span>
             {% endfor %}
+          {% endif %}
+        </div>
+        <div class="profile-stats-row">
+          <div class="profile-stat">
+            <div class="profile-stat-num">{{ favorites|length }}</div>
+            <div class="profile-stat-label">Favorites</div>
+          </div>
+          <div class="profile-stat">
+            <div class="profile-stat-num">{{ reviews|length }}</div>
+            <div class="profile-stat-label">Reviews</div>
+          </div>
+          {% if top_rated %}
+          <div class="profile-stat">
+            <div class="profile-stat-num">{{ top_rated[0].rating }}</div>
+            <div class="profile-stat-label">Top Score</div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="profile-actions">
+        <a href="/select-genres?edit=1" class="action-btn action-btn-ghost">🎭 Edit Genres</a>
+        <a href="/premium" class="action-btn action-btn-primary">{% if user.is_premium %}Manage Premium{% else %}Go Premium{% endif %}</a>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- BODY -->
+  <div class="profile-body">
+
+    <!-- WORLD SWITCH -->
+    <div class="p-section p-reveal">
+      <div class="p-section-head">
+        <span class="p-section-title">🌐 Your Default World</span>
+      </div>
+      <div class="world-switch-row">
+        <a href="/set-world/anime" class="world-switch-btn {% if user.preferred_world == 'anime' %}current{% endif %}">
+          🎌 Anime World
+        </a>
+        <a href="/set-world/movie" class="world-switch-btn movies {% if user.preferred_world == 'movie' %}current{% endif %}">
+          🎬 Movie World
+        </a>
+      </div>
+    </div>
+
+    <!-- FAVORITES -->
+    <div class="p-section p-reveal" style="transition-delay:0.1s">
+      <div class="p-section-head">
+        <span class="p-section-title">❤️ Favorites</span>
+        <a href="/favorites" class="p-section-action">See All →</a>
+      </div>
+      {% if favorites %}
+        <div class="fav-scroll">
+          {% for item in favorites %}
+            <a href="{{ url_for('content_detail', content_id=item.id) }}" class="fav-card">
+              <img src="{{ item.poster_url }}" alt="{{ item.title }}">
+              <div class="fav-card-label">{{ item.title }}</div>
+            </a>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="fav-empty">No favorites yet. Start exploring and save what you love.</p>
+      {% endif %}
+    </div>
+
+    <!-- TOP RATED -->
+    {% if top_rated %}
+    <div class="p-section p-reveal" style="transition-delay:0.15s">
+      <div class="p-section-head">
+        <span class="p-section-title">⭐ Your Top Rated</span>
+      </div>
+      <div class="top-rated-scroll">
+        {% for item in top_rated %}
+          <a href="{{ url_for('content_detail', content_id=item.content_id) }}" class="tr-card">
+            <img src="{{ item.poster_url }}" alt="{{ item.title }}">
+            <div class="tr-badge">★ {{ item.rating }}</div>
+          </a>
+        {% endfor %}
       </div>
     </div>
     {% endif %}
 
-    <div class="profile-section">
-        <h3>💬 Your Reviews</h3>
+    <!-- REVIEWS -->
+    <div class="p-section p-reveal" style="transition-delay:0.2s">
+      <div class="p-section-head">
+        <span class="p-section-title">💬 Your Reviews</span>
+      </div>
 
-        <div class="profile-review-toolbar">
-
-            <div class="profile-review-filter">
-
-                <button data-type="all" class="active">All</button>
-                <button data-type="anime">Anime</button>
-                <button data-type="movie">Movies</button>
-
-            </div>
-
-            <div class="profile-review-sort">
-
-                <button data-sort="newest" class="active">Newest</button>
-                <button data-sort="highest">Highest Rated</button>
-                <button data-sort="lowest">Lowest Rated</button>
-
-            </div>
-
+      <div class="review-toolbar">
+        <div class="chip-group" id="filterChips">
+          <button class="review-chip active" data-type="all">All</button>
+          <button class="review-chip" data-type="anime">Anime</button>
+          <button class="review-chip" data-type="movie">Movies</button>
         </div>
-
-        <div class="profile-reviews-scroll">
-
-            {% if reviews %}
-
-                {% for i in range(0, reviews|length, 2) %}
-                    <div class="review-column">
-
-                        {% for r in reviews[i:i+2] %}
-                            <a href="{{ url_for('content_detail', content_id=r.content_id) }}"
-                               class="profile-review-card"
-                               data-type="{{ r.type }}"
-                               data-rating="{{ r.rating }}"
-                               data-date="{{ r.created_at }}">
-
-                                    <img src="{{ r.poster_url }}" class="profile-review-poster">
-
-                                    <div class="profile-review-content">
-
-                                        <div class="profile-review-header">
-                                            <span class="profile-review-title">
-                                                {{ r.title }}
-                                            </span>
-
-                                            <span class="profile-review-rating">
-                                                {{ r.rating }} ⭐
-                                            </span>
-                                        </div>
-
-                                        <p class="profile-review-comment">
-                                            {{ r.comment }}
-                                        </p>
-                                    </div>
-                                </a>
-                            {% endfor %}
-                        </div>
-                    {% endfor %}
-            {% else %}
-                <p class="empty-message">You haven't written any reviews yet.</p>
-            {% endif %}
+        <div class="chip-group" id="sortChips">
+          <button class="review-chip active" data-sort="newest">Newest</button>
+          <button class="review-chip" data-sort="highest">Highest</button>
+          <button class="review-chip" data-sort="lowest">Lowest</button>
         </div>
+      </div>
+
+      {% if reviews %}
+        <div class="reviews-masonry" id="reviewsMasonry">
+          {% for r in reviews %}
+            <a href="{{ url_for('content_detail', content_id=r.content_id) }}"
+               class="p-review-card"
+               data-type="{{ r.type }}"
+               data-rating="{{ r.rating }}"
+               data-date="{{ r.created_at }}">
+              <img src="{{ r.poster_url }}" class="p-review-poster">
+              <div class="p-review-content">
+                <div class="p-review-title-row">
+                  <span class="p-review-title">{{ r.title }}</span>
+                  <span class="p-review-score">★ {{ r.rating }}</span>
+                </div>
+                <div class="p-review-type">{{ r.type | capitalize }}</div>
+                <p class="p-review-comment">{{ r.comment }}</p>
+              </div>
+            </a>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="reviews-empty">You haven't written any reviews yet. Watch something and share your thoughts.</p>
+      {% endif %}
     </div>
 
-</section>
+  </div>
+</div>
+
+<!-- AVATAR MODAL -->
+<div class="av-modal" id="avModal">
+  <div class="av-modal-box">
+    <div class="av-modal-head">
+      <button class="av-tab active" data-tab="defaultAv">Choose Avatar</button>
+      <button class="av-tab" data-tab="uploadAv">Upload Photo</button>
+    </div>
+
+    <div class="av-modal-body">
+      <div class="av-tab-content active" id="defaultAv">
+        <div class="av-grid">
+          {% set avatars = ["anime_boy_1.jpeg","anime_boy_2.jpeg","anime_boy_3.jpeg","anime_girl_1.jpeg","anime_girl_2.jpeg","anime_girl_3.jpeg","anime_boy_4.jpeg","iron_man.png","thor.png","spooderman.png","hulk.png","cmarvel.png"] %}
+          {% for av in avatars %}
+            <img src="{{ url_for('static', filename='avatars/default/' + av) }}" class="av-option" data-avatar="{{ av }}">
+          {% endfor %}
+        </div>
+      </div>
+      <div class="av-tab-content" id="uploadAv">
+        <div class="av-upload-zone" id="avUploadZone">
+          <div style="font-size:36px;margin-bottom:12px">📸</div>
+          <div>Click to upload your photo</div>
+          <div style="font-size:12px;margin-top:6px;color:var(--muted)">JPG, PNG or WEBP · Max 2MB</div>
+          <input type="file" id="avFileInput" accept="image/*" hidden>
+        </div>
+      </div>
+    </div>
+
+    <button class="av-close" onclick="closeAvatarModal()">Cancel</button>
+  </div>
+</div>
 
 {% if show_toast %}
 <div class="toast success-toast show" id="prefToast">
-    <span class="toast-icon">🎉</span>
-    <span>Preference saved! Your world has been updated.</span>
+  <span>🎉 Preference saved!</span>
 </div>
 {% endif %}
 
 <script>
-const modal = document.getElementById("avatarModal");
+// Scroll reveal
+const revObs = new IntersectionObserver(entries => entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add("visible"); revObs.unobserve(e.target); } }), { threshold: 0.1 });
+document.querySelectorAll(".p-reveal").forEach(el => revObs.observe(el));
 
-document.querySelector(".edit-avatar-btn")
-    .addEventListener("click", () => {
-        modal.style.display = "flex";
-    });
+// Avatar modal
+function openAvatarModal() { document.getElementById("avModal").classList.add("open"); }
+function closeAvatarModal() { document.getElementById("avModal").classList.remove("open"); }
 
-function closeAvatarModal() {
-    modal.style.display = "none";
+// Tabs inside modal
+document.querySelectorAll(".av-tab").forEach(t => {
+  t.addEventListener("click", () => {
+    document.querySelectorAll(".av-tab").forEach(x => x.classList.remove("active"));
+    document.querySelectorAll(".av-tab-content").forEach(x => x.classList.remove("active"));
+    t.classList.add("active");
+    document.getElementById(t.dataset.tab).classList.add("active");
+  });
+});
+
+// Choose default avatar
+document.querySelectorAll(".av-option").forEach(opt => {
+  opt.addEventListener("click", function() {
+    fetch("/set-avatar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ avatar: this.dataset.avatar }) })
+      .then(r => r.json()).then(d => { if (d.success) location.reload(); });
+  });
+});
+
+// Upload avatar
+const uploadZone = document.getElementById("avUploadZone");
+const fileInput = document.getElementById("avFileInput");
+uploadZone.addEventListener("click", () => fileInput.click());
+fileInput.addEventListener("change", function() {
+  const file = this.files[0]; if (!file) return;
+  if (file.size > 2 * 1024 * 1024) { alert("File must be under 2MB"); return; }
+  const fd = new FormData(); fd.append("avatar", file);
+  fetch("/upload-avatar", { method: "POST", body: fd }).then(r => r.json()).then(d => { if (d.success) location.reload(); else alert(d.error || "Upload failed"); });
+});
+
+// Click outside modal to close
+document.getElementById("avModal").addEventListener("click", function(e) { if (e.target === this) closeAvatarModal(); });
+
+// Reviews filter & sort
+const cards = Array.from(document.querySelectorAll(".p-review-card"));
+let filterType = "all";
+let sortType = "newest";
+
+function updateReviews() {
+  let filtered = cards.filter(c => filterType === "all" || c.dataset.type === filterType);
+  if (sortType === "highest") filtered.sort((a,b) => b.dataset.rating - a.dataset.rating);
+  else if (sortType === "lowest") filtered.sort((a,b) => a.dataset.rating - b.dataset.rating);
+  else filtered.sort((a,b) => new Date(b.dataset.date) - new Date(a.dataset.date));
+  const grid = document.getElementById("reviewsMasonry");
+  if (!grid) return;
+  cards.forEach(c => c.style.display = "none");
+  filtered.forEach(c => { c.style.display = "flex"; grid.appendChild(c); });
 }
 
-document.querySelectorAll(".avatar-option").forEach(option => {
-    option.addEventListener("click", function() {
-        const avatar = this.dataset.avatar;
-
-        fetch("/set-avatar", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ avatar: avatar })
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            }
-        });
-    });
+document.querySelectorAll("#filterChips .review-chip").forEach(b => {
+  b.addEventListener("click", () => {
+    document.querySelectorAll("#filterChips .review-chip").forEach(x => x.classList.remove("active"));
+    b.classList.add("active"); filterType = b.dataset.type; updateReviews();
+  });
+});
+document.querySelectorAll("#sortChips .review-chip").forEach(b => {
+  b.addEventListener("click", () => {
+    document.querySelectorAll("#sortChips .review-chip").forEach(x => x.classList.remove("active"));
+    b.classList.add("active"); sortType = b.dataset.sort; updateReviews();
+  });
 });
 
-const uploadArea = document.getElementById("uploadArea");
-const avatarInput = document.getElementById("avatarInput");
-
-uploadArea.addEventListener("click", () => avatarInput.click());
-
-avatarInput.addEventListener("change", function() {
-    const file = this.files[0];
-
-    if (!file) return;
-
-    if (file.size > 2 * 1024 * 1024) {
-        alert("File must be under 2MB");
-        return;
-    }
-
-    const formData = new FormData();
-    formData.append("avatar", file);
-
-    fetch("/upload-avatar", {
-        method: "POST",
-        body: formData
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            location.reload();
-        } else {
-            alert(data.error || "Upload failed");
-        }
-    });
-});
-
-document.querySelectorAll(".avatar-tab").forEach(tab => {
-    tab.addEventListener("click", function() {
-
-        document.querySelectorAll(".avatar-tab")
-            .forEach(t => t.classList.remove("active"));
-
-        document.querySelectorAll(".avatar-tab-content")
-            .forEach(c => c.classList.remove("active"));
-
-        this.classList.add("active");
-
-        const tabId = this.dataset.tab;
-        document.getElementById(tabId).classList.add("active");
-    });
-});
-
-let currentType = "all";
-let currentSort = "newest";
-
-const cards = Array.from(document.querySelectorAll(".profile-review-card"));
-const columns = document.querySelectorAll(".review-column");
-
-function updateProfileReviews() {
-
-    let filtered = cards.filter(card => {
-
-        if (currentType === "all") return true;
-
-        return card.dataset.type === currentType;
-
-    });
-
-    if (currentSort === "highest") {
-        filtered.sort((a,b) => b.dataset.rating - a.dataset.rating);
-    }
-
-    if (currentSort === "lowest") {
-        filtered.sort((a,b) => a.dataset.rating - b.dataset.rating);
-    }
-
-    if (currentSort === "newest") {
-        filtered.sort((a,b) =>
-            new Date(b.dataset.date) - new Date(a.dataset.date)
-        );
-    }
-
-    columns.forEach(c => c.innerHTML = "");
-
-    filtered.forEach((card,i) => {
-
-        const col = columns[i % columns.length];
-        col.appendChild(card);
-
-    });
-
-}
-
-document
-.querySelectorAll(".profile-review-filter button")
-.forEach(btn => {
-
-    btn.addEventListener("click", () => {
-
-        document
-        .querySelectorAll(".profile-review-filter button")
-        .forEach(b => b.classList.remove("active"));
-
-        btn.classList.add("active");
-
-        currentType = btn.dataset.type;
-
-        updateProfileReviews();
-
-    });
-
-});
-
-document
-.querySelectorAll(".profile-review-sort button")
-.forEach(btn => {
-
-    btn.addEventListener("click", () => {
-
-        document
-        .querySelectorAll(".profile-review-sort button")
-        .forEach(b => b.classList.remove("active"));
-
-        btn.classList.add("active");
-
-        currentSort = btn.dataset.sort;
-
-        updateProfileReviews();
-
-    });
-
-});
-</script>
-
-<script>
+// Toast
 setTimeout(() => {
-    const toast = document.getElementById("prefToast");
-    if (toast) {
-        toast.classList.remove("show");
-    }
+  const t = document.getElementById("prefToast");
+  if (t) t.classList.remove("show");
 }, 3000);
 </script>
 

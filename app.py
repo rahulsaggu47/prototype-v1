@@ -1,8 +1,10 @@
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 import os 
+from groq import Groq
 from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
+from dotenv import load_dotenv
 from utils.db import (
     get_db,
     close_db,
@@ -22,9 +24,46 @@ from utils.db import (
     get_user_by_id
 )
 
+load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = "dev-secret-key"
+app.secret_key = os.getenv("app.secret_key")
+
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+GROQ_MODEL   = "llama-3.3-70b-versatile"
+
+groq_client = Groq(api_key=GROQ_API_KEY)
+
+NEXI_SYSTEM_PROMPT = """You are Nexi, the AI assistant for NextWatch — a personalized anime and movie discovery platform.
+
+Your personality:
+- Warm, enthusiastic, and genuinely knowledgeable about anime and movies
+- Concise but helpful — no filler, no unnecessary disclaimers
+- You feel like a friend who has watched everything, not a corporate chatbot
+- Use light emoji occasionally to add energy, but not on every sentence
+- Be opinionated when asked — actually recommend things rather than hedging
+
+Your capabilities:
+- Recommend anime and movies based on mood, genre, vibe, or specific preferences
+- Help users discover hidden gems they would not find on their own
+- Explain what a show or movie is about without spoilers unless asked
+- Suggest what to watch next after finishing something
+- Give honest takes on whether something is worth watching
+
+About NextWatch:
+- Users can save favorites, write reviews, and rate content
+- The platform covers both anime and movies, filterable by genre, year, and rating
+- Users can set preferred genres for personalized recommendations
+- There is a Premium plan with mood-based discovery and advanced filters
+
+Rules:
+- ONLY discuss anime, movies, and NextWatch features. If asked about anything else, politely redirect.
+- Never invent titles. If unsure something exists, say so.
+- Keep responses short. 2-4 sentences for simple questions, a short paragraph for recommendations.
+- When recommending, give 2-4 specific titles with a one-line reason for each. Do not list 10 things.
+- If the user's genre preferences are in context, use them to personalize your response.
+- Do not msg first. Only respond when the user initiates a conversation or asks a question.
+"""
 
 def is_admin():
     return session.get("user_id") in [1, 30]
@@ -1091,7 +1130,7 @@ def premium_page():
         return redirect("/login")
 
     plan = request.args.get("plan", "monthly")
-    return render_template("premium.html", selected_plan=plan)
+    return render_template("premium.html", selected_plan=plan,razorpay_key_id=os.getenv("RAZORPAY_KEY_ID"))
 
 @app.route("/payment")
 def payment():
@@ -1112,7 +1151,7 @@ def payment():
 
 import razorpay
 
-client = razorpay.Client(auth=("rzp_test_ST2BdDGg6Z5fxw", "r0kXpsMSqwaiy4z0QIJfC8Dh"))
+client = razorpay.Client(auth=(os.getenv("RAZORPAY_KEY_ID"), os.getenv("RAZORPAY_KEY_SECRET")))
 
 @app.route("/create-order/<plan>")
 def create_order(plan):
@@ -1154,6 +1193,88 @@ def cancel_membership():
     db.commit()
 
     return redirect("/profile")
+
+
+@app.route("/api/nexi", methods=["POST"])
+def nexi_chat():
+    data    = request.json or {}
+    message = (data.get("message") or "").strip()
+    history = data.get("history") or []
+
+    if not message:
+        return jsonify({"error": "Empty message"}), 400
+
+    # Inject logged-in user's genre preferences as context
+    context_note = ""
+    user_id = session.get("user_id")
+    if user_id:
+        db   = get_db()
+        user = db.execute(
+            "SELECT username, preferred_genres FROM users WHERE id = ?",
+            (user_id,)
+        ).fetchone()
+        if user:
+            if user["preferred_genres"]:
+                genres = ", ".join(g.strip() for g in user["preferred_genres"].split(","))
+                context_note = (
+                    f"\n\n[Context: This user's name is {user['username']}. "
+                    f"Their preferred genres on NextWatch are: {genres}. "
+                    f"Use this when making recommendations.]"
+                )
+            else:
+                context_note = (
+                    f"\n\n[Context: This user's name is {user['username']}. "
+                    f"They have not set genre preferences yet.]"
+                )
+
+    messages = [
+        {"role": "system", "content": NEXI_SYSTEM_PROMPT + context_note},
+        *history[-10:],
+        {"role": "user", "content": message},
+    ]
+
+    try:
+        completion = groq_client.chat.completions.create(
+            model=GROQ_MODEL,
+            messages=messages,
+            temperature=0.75,
+            max_tokens=400,
+            top_p=0.9,
+        )
+        reply = completion.choices[0].message.content.strip()
+    except Exception as e:
+        print(f"Groq error: {e}")
+        return jsonify({
+            "reply": "I am having a bit of trouble connecting right now. Try again in a moment! 🔧"
+        })
+
+    try:
+        db = get_db()
+        db.execute(
+            "INSERT INTO chatbot_logs (user_id, user_message, bot_response) VALUES (?, ?, ?)",
+            (user_id, message, reply)
+        )
+        db.commit()
+    except Exception as e:
+        print(f"Chat log error: {e}")
+
+    return jsonify({"reply": reply})
+
+
+@app.route("/admin/chat-logs")
+def admin_chat_logs():
+    if "user_id" not in session or not is_admin():
+        return redirect("/login")
+    db   = get_db()
+    logs = db.execute("""
+        SELECT cl.*, u.username
+        FROM chatbot_logs cl
+        LEFT JOIN users u ON cl.user_id = u.id
+        ORDER BY cl.timestamp DESC
+        LIMIT 200
+    """).fetchall()
+    return render_template("admin/chat_logs.html", logs=logs)
+
 
 if __name__ == "__main__":
     app.run(debug=True)
