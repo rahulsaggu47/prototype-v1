@@ -19,7 +19,7 @@ def close_db(e=None):
         db.close()
 
 
-def get_trending_content(content_type, limit=10):
+def get_trending_content(content_type, limit=20):
     db = get_db()
     query = """
         SELECT * FROM content
@@ -30,7 +30,7 @@ def get_trending_content(content_type, limit=10):
     return db.execute(query, (content_type, limit)).fetchall()
 
 
-def get_popular_content(content_type, limit=10):
+def get_popular_content(content_type, limit=20):
     db = get_db()
     query = """
         SELECT * FROM content
@@ -41,7 +41,7 @@ def get_popular_content(content_type, limit=10):
     return db.execute(query, (content_type, limit)).fetchall()
 
 
-def get_personalized_content(user_id, content_type, limit=10):
+def get_personalized_content(user_id, content_type, limit=20):
     db = get_db()
 
     # get user's preferred genres
@@ -72,7 +72,7 @@ def get_personalized_content(user_id, content_type, limit=10):
     ).fetchall()
 
 
-def get_trending_by_genres(content_type, genres=None, limit=10):
+def get_trending_by_genres(content_type, genres=None, limit=20):
     db = get_db()
 
     base_query = """
@@ -92,7 +92,7 @@ def get_trending_by_genres(content_type, genres=None, limit=10):
     return db.execute(base_query, params).fetchall()
 
 
-def get_popular_by_genres(content_type, genres=None, limit=10):
+def get_popular_by_genres(content_type, genres=None, limit=20):
     db = get_db()
 
     base_query = """
