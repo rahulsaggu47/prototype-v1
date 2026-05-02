@@ -1,0 +1,514 @@
+/* ============================================================
+   NEXTWATCH — MOBILE RESPONSIVENESS
+   Included globally via base.html
+   Targets: 768px and below (tablets + phones)
+   480px and below (phones only)
+============================================================ */
+
+/* ── Global resets ───────────────────────────────────────── */
+@media (max-width: 768px) {
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html { font-size: 15px; }
+
+  img { max-width: 100%; }
+
+  /* Prevent horizontal overflow on any page */
+  body { overflow-x: hidden; }
+}
+
+/* ============================================================
+   HOME PAGE
+============================================================ */
+@media (max-width: 768px) {
+
+  /* ── Header ── */
+  .main-header {
+    grid-template-columns: 1fr;
+    height: auto;
+    padding: 12px 16px;
+    gap: 10px;
+  }
+
+  .logo-container { justify-content: center; }
+  .logo-svg { width: 140px; }
+
+  .search-container {
+    width: 100%;
+    display: flex;
+    gap: 8px;
+    order: 3;
+  }
+
+  .search-box { width: 100%; flex: 1; }
+  .search-box input { width: 100%; }
+
+  .auth-buttons {
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    order: 2;
+  }
+
+  .auth-buttons a { font-size: 13px; }
+
+  /* ── Filter panel ── */
+  .filter-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px;
+  }
+
+  .filter-panel { padding: 14px 16px; margin: 0 16px; }
+
+  /* ── Toggle row ── */
+  .toggle-row {
+    padding: 0 16px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .toggle-container { gap: 8px; }
+
+  /* ── Spotlight ── */
+  .spotlight {
+    padding: 40px 20px 60px;
+    min-height: 280px;
+  }
+
+  .spotlight-title { font-size: 28px !important; }
+  .spotlight-desc  { font-size: 13px !important; }
+  .spotlight-poster { display: none; }
+  .spotlight-content { max-width: 100%; }
+
+  .spotlight-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .spotlight-actions .btn {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  /* ── Horizontal card rows ── */
+  .horizontal-row { gap: 12px; padding: 0 16px 12px; }
+
+  .horizontal-row .card,
+  .content-row   .card {
+    min-width: 140px;
+    max-width: 140px;
+  }
+
+  .horizontal-row .card img,
+  .content-row   .card img { height: 200px; }
+
+  /* ── Section headers ── */
+  .section { padding: 20px 16px; }
+  .section h2 { font-size: 18px; }
+
+  /* ── Content grid (search results) ── */
+  .content-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .content-card img { height: 200px; }
+
+  /* ── Admin picks curator ── */
+  .curator-wrapper {
+    grid-template-columns: 1fr !important;
+    gap: 24px;
+  }
+
+  /* ── Recommender modal ── */
+  .reco-overlay .reco-modal,
+  .modal-overlay .modal-box {
+    width: 92vw;
+    padding: 24px 20px;
+  }
+
+  /* ── Nexi FAB position ── */
+  #nexi-fab    { right: 16px; bottom: 16px; }
+  #nexi-window {
+    right: 10px; left: 10px;
+    width: auto;
+    bottom: 84px;
+    max-height: calc(100dvh - 100px);
+  }
+}
+
+/* ============================================================
+   DETAIL PAGE
+============================================================ */
+@media (max-width: 768px) {
+
+  .detail-nav { padding: 0 16px; }
+  .detail-nav .nav-actions { gap: 8px; }
+  .detail-nav .pill-btn { padding: 6px 12px; font-size: 12px; }
+
+  /* Hero */
+  .hero-backdrop { height: 75vh; min-height: 460px; }
+
+  .hero-info-inner {
+    grid-template-columns: 1fr !important;
+    padding: 0 20px;
+    gap: 16px;
+  }
+
+  .poster-wrap { display: none; }
+
+  .content-title { font-size: 38px !important; letter-spacing: 2px; }
+
+  .hero-description { font-size: 13px; -webkit-line-clamp: 4; }
+
+  .cta-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .btn-primary, .btn-ghost, .fav-btn-hero {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Tabs */
+  .tabs-bar { padding: 0 16px; overflow-x: auto; }
+  .tabs-inner { gap: 0; }
+  .tab-btn { padding: 14px 16px; font-size: 13px; white-space: nowrap; }
+
+  /* Info grid */
+  .info-grid { grid-template-columns: 1fr !important; gap: 24px; }
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .section-container { padding: 28px 20px; }
+
+  /* Reviews */
+  .reviews-top-section { grid-template-columns: 1fr !important; gap: 20px; }
+  .platform-grid { grid-template-columns: 1fr !important; }
+
+  /* Related row */
+  .related-section { padding: 32px 16px 56px; }
+  .related-card { width: 140px; }
+  .related-card img { height: 200px; }
+}
+
+/* ============================================================
+   FAVORITES PAGE
+============================================================ */
+@media (max-width: 768px) {
+
+  .fav-nav { padding: 0 16px; }
+  .fav-header { padding: 48px 20px 0; }
+  .fav-page-title { font-size: 44px !important; }
+
+  .fav-filter-bar {
+    padding: 20px 20px 0;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .filter-chips { flex-wrap: wrap; }
+
+  .fav-divider { margin: 20px 20px 0; }
+
+  .fav-grid-wrap { padding: 24px 20px 60px; }
+
+  .fav-grid { columns: 2 140px; column-gap: 14px; }
+
+  .fav-card:nth-child(3n+2) { margin-top: 0; }
+  .fav-card:nth-child(3n)   { margin-top: 0; }
+}
+
+/* ============================================================
+   PROFILE PAGE
+============================================================ */
+@media (max-width: 768px) {
+
+  .p-nav { padding: 0 16px; }
+
+  .profile-hero { padding: 60px 0 0; }
+
+  .profile-hero-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
+    padding: 0 20px 40px;
+  }
+
+  .profile-avatar-ring { width: 90px; height: 90px; }
+  .profile-username { font-size: 32px !important; }
+  .profile-stats-row { gap: 16px; flex-wrap: wrap; }
+
+  .profile-actions {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding-bottom: 0;
+  }
+
+  .action-btn { width: 100%; text-align: center; }
+
+  .profile-body { padding: 0 20px 60px; }
+  .p-section { margin-top: 40px; }
+
+  .world-switch-row { flex-direction: column; gap: 10px; }
+  .world-switch-btn { width: 100%; justify-content: center; text-align: center; }
+
+  .reviews-masonry { grid-template-columns: 1fr !important; }
+
+  .p-review-poster { width: 56px; height: 80px; }
+
+  /* Avatar modal */
+  .av-modal-box { width: 94vw; }
+  .av-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* ============================================================
+   PREMIUM PAGE
+============================================================ */
+@media (max-width: 768px) {
+
+  .pr-nav { padding: 0 16px; }
+  .pr-hero { padding: 80px 20px 60px; }
+  .pr-hero-title { font-size: 52px !important; }
+
+  .pr-toggle-wrap { flex-direction: column; align-items: center; gap: 10px; }
+
+  .pr-cards-wrap {
+    grid-template-columns: 1fr !important;
+    padding: 0 20px;
+    gap: 20px;
+  }
+
+  .pr-card-body { padding: 24px 20px; }
+  .pr-amount { font-size: 52px !important; }
+
+  .pr-perks  { padding: 0 20px; }
+  .pr-compare { padding: 0 20px 60px; }
+  .perks-grid { grid-template-columns: 1fr !important; }
+
+  .compare-table thead th,
+  .compare-table tbody td { padding: 12px 14px; font-size: 13px; }
+}
+
+/* ============================================================
+   WELCOME / LANDING PAGE
+============================================================ */
+@media (max-width: 768px) {
+
+  .w-nav { padding: 0 20px; }
+  .w-nav-right { gap: 8px; }
+  .w-nav-link { padding: 7px 14px; font-size: 12px; }
+
+  .hero-content { padding: 0 20px; }
+  .hero-title   { font-size: 72px !important; letter-spacing: 4px; }
+  .hero-sub     { font-size: 15px; }
+
+  .hero-btns {
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .btn-hero-anime,
+  .btn-hero-movie {
+    width: 100%;
+    max-width: 280px;
+    justify-content: center;
+  }
+
+  /* About strip */
+  .about-inner {
+    grid-template-columns: 1fr !important;
+    gap: 40px;
+    padding: 60px 20px;
+  }
+
+  .about-lead { font-size: 32px !important; }
+
+  .stat-highlight-grid { grid-template-columns: 1fr 1fr; }
+
+  /* How section */
+  .how-section { padding: 60px 20px; }
+  .how-grid { grid-template-columns: 1fr !important; gap: 16px; margin-top: 36px; }
+
+  /* Team */
+  .team-section { padding: 60px 20px; }
+  .team-grid { grid-template-columns: 1fr !important; gap: 24px; }
+  .team-card-body { padding: 28px 24px; }
+  .team-avatar-ring { width: 56px; height: 56px; }
+  .team-name { font-size: 22px !important; }
+
+  /* Premium strip on landing */
+  .premium-strip { padding: 60px 20px; }
+  .plans-grid { grid-template-columns: 1fr !important; max-width: 100%; }
+  .billing-toggle-wrap { flex-direction: column; align-items: flex-start; }
+
+  /* W section */
+  .w-section { padding: 60px 20px; }
+}
+
+/* ============================================================
+   FOOTER
+============================================================ */
+@media (max-width: 768px) {
+
+  .footer-body {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 32px;
+    padding: 48px 20px 36px;
+  }
+
+  .footer-brand { grid-column: 1 / -1; }
+  .footer-bottom { padding: 16px 20px; flex-direction: column; align-items: flex-start; gap: 8px; }
+  .footer-logo-mark { font-size: 32px; }
+}
+
+/* ============================================================
+   LOGIN / SIGNUP
+============================================================ */
+@media (max-width: 768px) {
+
+  .login-wrapper,
+  .signup-wrapper {
+    padding: 24px 20px;
+    align-items: flex-start;
+    padding-top: 60px;
+  }
+
+  .login-card,
+  .signup-card {
+    width: 100%;
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 32px 24px;
+  }
+}
+
+/* ============================================================
+   GENRE SELECT PAGE
+============================================================ */
+@media (max-width: 768px) {
+
+  body:has(.genre-wrapper) { overflow-y: auto; }
+
+  .genre-card {
+    width: 92vw;
+    padding: 36px 24px;
+  }
+
+  .genre-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .genre-chip span { padding: 11px 10px; font-size: 13px; }
+}
+
+/* ============================================================
+   PHONE-ONLY TWEAKS (max 480px)
+============================================================ */
+@media (max-width: 480px) {
+
+  /* Home header — stack search below auth */
+  .main-header {
+    grid-template-areas:
+      "logo"
+      "auth"
+      "search";
+    grid-template-columns: 1fr;
+  }
+
+  .logo-container { grid-area: logo; }
+  .auth-buttons   { grid-area: auth; }
+  .search-container { grid-area: search; }
+
+  /* Smaller cards on tiny screens */
+  .horizontal-row .card,
+  .content-row   .card {
+    min-width: 120px;
+    max-width: 120px;
+  }
+
+  .horizontal-row .card img { height: 170px; }
+
+  /* Spotlight */
+  .spotlight { padding: 30px 16px 50px; }
+  .spotlight-title { font-size: 22px !important; }
+
+  /* Content grid */
+  .content-grid { grid-template-columns: repeat(2, 1fr); padding: 12px; gap: 10px; }
+  .content-card img { height: 170px; }
+
+  /* Detail hero */
+  .content-title { font-size: 30px !important; }
+  .hero-backdrop { height: 65vh; }
+
+  /* Favorites masonry — single column on very small */
+  .fav-grid { columns: 2 120px; }
+
+  /* Profile */
+  .profile-username { font-size: 26px !important; }
+  .profile-avatar-ring { width: 72px; height: 72px; }
+
+  /* Welcome hero */
+  .hero-title { font-size: 54px !important; }
+  .hero-eyebrow { font-size: 10px; letter-spacing: 3px; }
+
+  /* Footer — single column */
+  .footer-body { grid-template-columns: 1fr !important; }
+
+  /* Nexi widget — full width */
+  #nexi-window { right: 8px; left: 8px; }
+
+  /* Review form */
+  .reviews-top-section { gap: 16px; }
+  .star-input span { font-size: 26px; }
+
+  /* Auth pages */
+  .login-card h1,
+  .signup-card h1 { font-size: 24px; }
+}
+
+/* ============================================================
+   UTILITY — touch-friendly tap targets
+============================================================ */
+@media (max-width: 768px) {
+
+  .pill-btn,
+  .fav-pill,
+  .pr-pill,
+  .p-pill,
+  .w-nav-link,
+  .toggle-btn,
+  .sort-chip,
+  .fav-chip,
+  .review-chip,
+  .nexi-sugg-btn,
+  .action-chip {
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /* Bigger tap zone for nav avatar */
+  .nav-avatar,
+  .fav-nav-av,
+  .pr-av,
+  .p-avatar-sm,
+  .w-nav-avatar {
+    width: 40px;
+    height: 40px;
+  }
+
+  /* Prevent text zoom on input focus (iOS) */
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+
+  /* Scrollable tab bars */
+  .tabs-inner {
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .tabs-inner::-webkit-scrollbar { display: none; }
+}

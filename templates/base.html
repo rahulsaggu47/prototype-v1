@@ -2,9 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <!-- ✅ CRITICAL for mobile rendering -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NextWatch</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/header.css') }}">
+    <!-- Mobile responsiveness — always last so it overrides page CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}">
 </head>
 
 <body>
@@ -87,31 +91,25 @@
 
 <script>
 /* ===============================
-   SPLASH & AUDIO CONTROL (FIXED)
+   SPLASH & AUDIO CONTROL
 ================================ */
 
 const splash = document.getElementById("splash-screen");
 const audio = document.getElementById("intro-sound");
 
-// show splash only once per session
 if (!sessionStorage.getItem("splashShown")) {
     sessionStorage.setItem("splashShown", "true");
 
-    // play audio ONLY ONCE, ONLY DURING SPLASH
     if (!sessionStorage.getItem("introPlayed")) {
         const startAudioOnce = () => {
             audio.volume = 0.5;
             audio.play().catch(() => {});
             sessionStorage.setItem("introPlayed", "true");
-
-            // remove listener after first interaction
             document.removeEventListener("pointerdown", startAudioOnce);
         };
-
         document.addEventListener("pointerdown", startAudioOnce);
     }
 
-    // remove splash + stop audio
     setTimeout(() => {
         if (splash) splash.remove();
         audio.pause();
@@ -119,7 +117,6 @@ if (!sessionStorage.getItem("splashShown")) {
     }, 3800);
 
 } else {
-    // splash already seen → remove immediately
     if (splash) splash.remove();
 }
 
@@ -130,7 +127,6 @@ if (window.matchMedia("(pointer: fine)").matches) {
     document.addEventListener("mousemove", (e) => {
         const x = (e.clientX / window.innerWidth - 0.5) * 20;
         const y = (e.clientY / window.innerHeight - 0.5) * 20;
-
         document.documentElement.style.setProperty("--dx", `${x}px`);
         document.documentElement.style.setProperty("--dy", `${y}px`);
     });
@@ -142,9 +138,7 @@ if (window.matchMedia("(pointer: fine)").matches) {
 function showLoginToast() {
     const toast = document.getElementById("loginToast");
     if (!toast) return;
-
     toast.classList.add("show");
-
     clearTimeout(window._loginToastTimer);
     window._loginToastTimer = setTimeout(() => {
         toast.classList.remove("show");
@@ -156,9 +150,8 @@ function showLoginToast() {
 function triggerShake() {
     const main = document.querySelector("main");
     if (!main) return;
-
-    main.classList.remove("shake"); // reset if already shaking
-    void main.offsetWidth;          // force reflow
+    main.classList.remove("shake");
+    void main.offsetWidth;
     main.classList.add("shake");
 }
 </script>
@@ -170,7 +163,6 @@ function triggerShake() {
   let history   = [];
   let isOpen    = false;
   let isBusy    = false;
-//   let greeted   = false;
 
   const fab     = document.getElementById("nexi-fab");
   const win     = document.getElementById("nexi-window");
@@ -181,7 +173,6 @@ function triggerShake() {
   const unread  = document.getElementById("nexi-unread");
   const confirm = document.getElementById("nexi-confirm");
 
-  // ── Open / close ───────────────────────────────────────
   fab.addEventListener("click", () => isOpen ? close() : open());
   document.getElementById("nexi-close-btn").addEventListener("click", close);
 
@@ -202,7 +193,6 @@ function triggerShake() {
     win.classList.remove("open");
   }
 
-  // ── Input ──────────────────────────────────────────────
   inputEl.addEventListener("input", () => {
     inputEl.style.height = "auto";
     inputEl.style.height = Math.min(inputEl.scrollHeight, 100) + "px";
@@ -213,7 +203,6 @@ function triggerShake() {
   });
   sendEl.addEventListener("click", send);
 
-  // ── Suggestions ────────────────────────────────────────
   document.querySelectorAll(".nexi-sugg-btn").forEach(b => {
     b.addEventListener("click", () => {
       inputEl.value = b.dataset.q;
@@ -235,19 +224,16 @@ function triggerShake() {
     });
   }
 
-  // ── Clear chat ─────────────────────────────────────────
   document.getElementById("nexi-clear-btn").addEventListener("click", () => confirm.classList.add("show"));
   document.getElementById("nexi-cn").addEventListener("click", () => confirm.classList.remove("show"));
   document.getElementById("nexi-cy").addEventListener("click", () => {
-    history = []; greeted = false;
+    history = [];
     msgsEl.innerHTML = "";
     confirm.classList.remove("show");
-    // Reset suggestions
     suggEl.removeAttribute("style");
     addMsg("bot", "Hey! I'm Nexi 👋 How can i help you out?");
   });
 
-  // ── Send ───────────────────────────────────────────────
   function send() {
     const text = inputEl.value.trim();
     if (!text || isBusy) return;
@@ -260,7 +246,6 @@ function triggerShake() {
     callNexi(text, false);
   }
 
-  // ── API ────────────────────────────────────────────────
   async function callNexi(text, isGreeting) {
     isBusy = true;
     sendEl.disabled = true;
@@ -272,7 +257,6 @@ function triggerShake() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: text,
-          // For greeting, send empty history so Nexi introduces itself cleanly
           history: isGreeting ? [] : history.slice(0, -1),
         }),
       });
@@ -298,7 +282,6 @@ function triggerShake() {
     sendEl.disabled = !inputEl.value.trim();
   }
 
-  // ── Render ─────────────────────────────────────────────
   function addMsg(role, text) {
     const wrap = document.createElement("div");
     wrap.className = "nexi-msg " + role;
@@ -337,7 +320,6 @@ function triggerShake() {
     return wrap;
   }
 
-  // Format Nexi's markdown-lite responses
   function fmt(text) {
     return esc(text)
       .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
@@ -352,7 +334,6 @@ function triggerShake() {
     return t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
   }
 
-  // Show unread badge after 6s if user hasn't opened chat
   setTimeout(() => {
     if (!isOpen) { unread.textContent = "1"; unread.classList.add("show"); }
   }, 6000);

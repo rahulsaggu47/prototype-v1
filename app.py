@@ -1,5 +1,7 @@
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
-import os 
+import os
+import threading
+import requests as _req          # aliased — don't shadow Flask's `request`
 from groq import Groq
 from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -33,6 +35,32 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 GROQ_MODEL   = "llama-3.3-70b-versatile"
 
 groq_client = Groq(api_key=GROQ_API_KEY)
+
+# ================================================================
+#  KEEP-ALIVE — pings /ping every 10 minutes so Render never sleeps
+#  Set RENDER_EXTERNAL_URL in your Render environment variables,
+#  e.g.  https://nextwatch-xxxx.onrender.com
+# ================================================================
+RENDER_EXTERNAL_URL = os.getenv("RENDER_EXTERNAL_URL", "").rstrip("/")
+
+def _keep_alive():
+    import time
+    while True:
+        time.sleep(10 * 60)   # wait 10 minutes between pings
+        if not RENDER_EXTERNAL_URL:
+            continue
+        try:
+            resp = _req.get(f"{RENDER_EXTERNAL_URL}/ping", timeout=10)
+            print(f"[keep-alive] ping → {resp.status_code}")
+        except Exception as exc:
+            print(f"[keep-alive] ping failed: {exc}")
+
+# Only start one thread — not in the Werkzeug reloader child process
+if os.environ.get("WERKZEUG_RUN_MAIN") != "true":
+    _ka_thread = threading.Thread(target=_keep_alive, daemon=True)
+    _ka_thread.start()
+
+# ================================================================
 
 NEXI_SYSTEM_PROMPT = """You are Nexi, the AI assistant for NextWatch — a personalized anime and movie discovery platform.
 
@@ -77,12 +105,17 @@ def inject_admin_flag():
 @app.teardown_appcontext
 def teardown_db(exception):
     close_db()
-    
+
+# ── Keep-alive ping endpoint ─────────────────────────────────────
+@app.route("/ping")
+def ping():
+    return "pong", 200
+
+# ── Admin ────────────────────────────────────────────────────────
 @app.route("/admin")
 def admin_dashboard():
     if "user_id" not in session or not is_admin():
         return redirect("/login")
-
     return render_template("admin/dashboard.html")
 
 @app.route("/admin/spotlight", methods=["GET", "POST"])
@@ -127,7 +160,6 @@ def admin_spotlight():
     )
 
 
-
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
     if request.method == "POST":
@@ -142,14 +174,13 @@ def signup():
                 (username, generate_password_hash(password))
             )
             db.commit()
-
             return redirect(url_for("login"))
 
         except Exception:
             return render_template(
                 "signup.html",
                 error="Username already exists",
-                username=username  # 👈 preserve input
+                username=username
             )
 
     return render_template("signup.html")
@@ -177,7 +208,6 @@ def select_genres():
 
     error = None
 
-    # ✅ PRE-FILL SELECTED GENRES (KEY FIX)
     if user["preferred_genres"]:
         selected_genres = [
             g.strip() for g in user["preferred_genres"].split(",")
@@ -209,7 +239,6 @@ def select_genres():
     )
 
 
-
 @app.route("/login", methods=["GET", "POST"])
 def login():
     db = get_db()
@@ -229,15 +258,12 @@ def login():
         if not check_password_hash(user["password_hash"], password):
             return render_template("login.html", error="Invalid Password")
 
-        # ✅ LOGIN SUCCESS
         session["user_id"] = user["id"]
 
-        # 🔥 NEW: CHECK IF USER WAS REDIRECTED
         next_page = session.pop("next", None)
         if next_page:
             return redirect(next_page)
 
-        # 🔽 EXISTING LOGIC (UNCHANGED)
         if not user["preferred_genres"] or user["preferred_genres"].strip() == "":
             return redirect("/select-genres")
 
@@ -275,20 +301,15 @@ SPOTLIGHT_VIDEO_MAP = {
 @app.route("/api/spotlight")
 def api_spotlight():
     content_type = request.args.get("type", "anime")
-
     spotlight_items = get_spotlight_content(content_type)
 
     result = []
     for row in spotlight_items:
         item = dict(row)
-
-        # 🎬 attach video if available
         item["video_url"] = SPOTLIGHT_VIDEO_MAP.get(item["id"])
-
         result.append(item)
 
     return jsonify(result)
-
 
 
 @app.route("/api/content")
@@ -327,7 +348,6 @@ def api_content():
             query += " AND genres LIKE ?"
             params.append(f"%{g}%")
 
-    # SORT
     if sort == "rating_desc":
         query += " ORDER BY rating DESC"
     elif sort == "rating_asc":
@@ -344,7 +364,6 @@ def api_content():
 def favorites_page():
     if "user_id" not in session:
         return redirect("/login")
-
     return render_template("favorites.html")
 
 
@@ -362,7 +381,6 @@ def api_add_favorite():
 
     add_favorite(user_id, content_id)
     return jsonify({"success": True})
-
 
 
 @app.route("/api/favorites/remove", methods=["POST"])
@@ -400,7 +418,7 @@ def api_favorite_status(content_id):
 @app.route("/api/favorites")
 def api_get_favorites():
     user_id = session.get("user_id")
-    content_type = request.args.get("type")  # anime / movie / all
+    content_type = request.args.get("type")
 
     if not user_id:
         return jsonify({"login_required": True}), 401
@@ -409,18 +427,14 @@ def api_get_favorites():
     return jsonify([dict(row) for row in favorites])
 
 
-
 @app.route("/")
 def home():
-
-    # 👻 If NOT logged in AND no type selected → go to welcome
     if "user_id" not in session and not request.args.get("type"):
         return redirect("/welcome")
 
     db = get_db()
     content_type = request.args.get("type")
 
-    # 👤 Logged-in user → DB preference fallback
     if "user_id" in session:
         user = db.execute(
             "SELECT preferred_world FROM users WHERE id = ?",
@@ -429,8 +443,6 @@ def home():
 
         if not content_type:
             content_type = user["preferred_world"] if user and user["preferred_world"] else "anime"
-
-    # 👻 Guest fallback (AFTER welcome selection)
     else:
         if not content_type:
             content_type = "anime"
@@ -452,13 +464,10 @@ def home():
 
 @app.route("/anime")
 def anime_home():
-
     content_type = "anime"
-
     trending = get_trending_by_genres(content_type)
     popular = get_popular_by_genres(content_type)
     top_rated = get_top_rated(content_type)
-
     show_toast = session.pop("preferences_saved", None)
 
     return render_template(
@@ -473,13 +482,10 @@ def anime_home():
 
 @app.route("/movie")
 def movie_home():
-
     content_type = "movie"
-
     trending = get_trending_by_genres(content_type)
     popular = get_popular_by_genres(content_type)
     top_rated = get_top_rated(content_type)
-
     show_toast = session.pop("preferences_saved", None)
 
     return render_template(
@@ -490,20 +496,16 @@ def movie_home():
         content_type=content_type,
         show_toast=show_toast
     )
-    
+
 @app.route("/set-world/<world>")
 def set_world(world):
-
     if "user_id" in session:
         db = get_db()
-
         db.execute(
             "UPDATE users SET preferred_world = ? WHERE id = ?",
             (world, session["user_id"])
         )
         db.commit()
-
-        # ✅ trigger toast
         session["preferences_saved"] = True
 
     return redirect(f"/?type={world}")
@@ -521,28 +523,18 @@ def content_detail(content_id):
     if content is None:
         return "Content not found", 404
 
-    return render_template(
-        "detail.html",
-        content=content
-    )
+    return render_template("detail.html", content=content)
 
 @app.route("/api/related/<int:content_id>")
 def api_related(content_id):
-    """
-    Returns up to 12 titles that share genres with the given content.
-    Excludes the content itself.
-    Tries to match on multiple genres — more shared = higher priority.
-    """
     db = get_db()
 
-    # Get the source content's genres and type
     source = db.execute(
         "SELECT type, genres FROM content WHERE id = ?",
         (content_id,)
     ).fetchone()
 
     if not source or not source["genres"]:
-        # Fallback: return top-rated of same type
         rows = db.execute("""
             SELECT * FROM content
             WHERE type = (SELECT type FROM content WHERE id = ?)
@@ -555,8 +547,6 @@ def api_related(content_id):
     genres = [g.strip() for g in source["genres"].split(",") if g.strip()]
     content_type = source["type"]
 
-    # Build a query that scores each row by how many genres it matches.
-    # SQLite doesn't have arrays, so we SUM a CASE per genre.
     if not genres:
         return jsonify([])
 
@@ -578,7 +568,6 @@ def api_related(content_id):
     return jsonify([dict(r) for r in rows])
 
 
-    
 @app.route("/api/recommend")
 def api_recommend():
     genres = request.args.get("genres", "").split(",")
@@ -648,11 +637,10 @@ def api_recommended():
         "reason": reason,
         "all_genres": preferred_genres
     })
-    
-    
+
+
 @app.route("/api/because-you-liked")
 def because_you_liked():
-
     user_id = session.get("user_id")
     if not user_id:
         return jsonify({"items": []})
@@ -660,7 +648,6 @@ def because_you_liked():
     db = get_db()
     content_type = request.args.get("type")
 
-    # Try favorites
     source = db.execute("""
         SELECT c.id, c.title, c.genres, c.type
         FROM content c
@@ -673,7 +660,6 @@ def because_you_liked():
 
     source_type = "favorite"
 
-    # Fallback to reviews
     if not source:
         source = db.execute("""
             SELECT c.id, c.title, c.genres, c.type
@@ -685,7 +671,6 @@ def because_you_liked():
             ORDER BY RANDOM()
             LIMIT 1
         """, (user_id, content_type)).fetchone()
-
         source_type = "review"
 
     if not source:
@@ -734,18 +719,16 @@ def because_you_liked():
         "source_type": source_type,
         "items": [dict(i) for i in items]
     })
-    
+
 
 @app.route("/api/out-of-comfort/<content_type>")
 def out_of_comfort(content_type):
-
     if "user_id" not in session:
         return jsonify({"items": [], "user_genres": []})
 
     db = get_db()
     user_id = session["user_id"]
 
-    # Get preferred genres
     user = db.execute(
         "SELECT preferred_genres FROM users WHERE id = ?",
         (user_id,)
@@ -758,7 +741,6 @@ def out_of_comfort(content_type):
         g.strip() for g in user["preferred_genres"].split(",")
     ]
 
-    # Build SQL conditions to exclude preferred genres
     genre_conditions = " AND ".join(["c.genres NOT LIKE ?"] * len(user_genres))
     genre_params = [f"%{g}%" for g in user_genres]
 
@@ -767,21 +749,12 @@ def out_of_comfort(content_type):
         FROM content c
         WHERE c.type = ?
         AND ({genre_conditions})
-
-        -- exclude favorites
         AND c.id NOT IN (
-            SELECT content_id
-            FROM favorites
-            WHERE user_id = ?
+            SELECT content_id FROM favorites WHERE user_id = ?
         )
-
-        -- exclude reviewed content
         AND c.id NOT IN (
-            SELECT content_id
-            FROM reviews
-            WHERE user_id = ?
+            SELECT content_id FROM reviews WHERE user_id = ?
         )
-
         ORDER BY RANDOM()
         LIMIT 10
     """, [content_type, *genre_params, user_id, user_id]).fetchall()
@@ -816,7 +789,7 @@ def admin_picks():
 
         for admin_name in ["fate", "akriti"]:
             for content_type in ["anime", "movie"]:
-                for pos in range(1, 11):  # allow up to 10 picks
+                for pos in range(1, 11):
                     cid = request.form.get(f"{admin_name}_{content_type}_{pos}")
                     if cid:
                         db.execute("""
@@ -827,17 +800,12 @@ def admin_picks():
         db.commit()
         return redirect("/admin/picks")
 
-    # Fetch all content
     content = db.execute("""
-        SELECT id, title, type
-        FROM content
-        ORDER BY title
+        SELECT id, title, type FROM content ORDER BY title
     """).fetchall()
 
-    # Fetch current picks
     picks = db.execute("""
-        SELECT admin_name, type, position, content_id
-        FROM admins_picks
+        SELECT admin_name, type, position, content_id FROM admins_picks
     """).fetchall()
 
     picks_map = {
@@ -850,12 +818,11 @@ def admin_picks():
         content=content,
         picks_map=picks_map
     )
-    
-    
+
+
 @app.route("/api/reviews/<int:content_id>")
 def get_reviews(content_id):
     sort = request.args.get("sort", "newest")
-
     order_clause = "r.created_at DESC"
 
     if sort == "highest":
@@ -884,23 +851,15 @@ def edit_review(review_id):
         return jsonify({"error": "Unauthorized"}), 403
 
     db = get_db()
-
-    review = db.execute(
-        "SELECT * FROM reviews WHERE id = ?",
-        (review_id,)
-    ).fetchone()
+    review = db.execute("SELECT * FROM reviews WHERE id = ?", (review_id,)).fetchone()
 
     if not review or review["user_id"] != session["user_id"]:
         return jsonify({"error": "Forbidden"}), 403
 
     data = request.json
-
     db.execute("""
-        UPDATE reviews
-        SET comment = ?, rating = ?
-        WHERE id = ?
+        UPDATE reviews SET comment = ?, rating = ? WHERE id = ?
     """, (data["comment"], data["rating"], review_id))
-
     db.commit()
 
     return jsonify({"success": True})
@@ -911,11 +870,7 @@ def delete_review(review_id):
         return jsonify({"error": "Unauthorized"}), 403
 
     db = get_db()
-
-    review = db.execute(
-        "SELECT * FROM reviews WHERE id = ?",
-        (review_id,)
-    ).fetchone()
+    review = db.execute("SELECT * FROM reviews WHERE id = ?", (review_id,)).fetchone()
 
     if not review or review["user_id"] != session["user_id"]:
         return jsonify({"error": "Forbidden"}), 403
@@ -960,15 +915,10 @@ def profile():
         return redirect(url_for("login"))
 
     db = get_db()
-    show_toast=show_toast = session.pop("preferences_saved", None)
+    show_toast = session.pop("preferences_saved", None)
 
-    # User
-    user = db.execute(
-        "SELECT * FROM users WHERE id = ?",
-        (session["user_id"],)
-    ).fetchone()
+    user = db.execute("SELECT * FROM users WHERE id = ?", (session["user_id"],)).fetchone()
 
-    # Favorites (join with content)
     favorites = db.execute("""
         SELECT c.id, c.title, c.poster_url
         FROM favorites f
@@ -977,24 +927,16 @@ def profile():
         ORDER BY f.id DESC
     """, (session["user_id"],)).fetchall()
 
-    # User Reviews (join with content)
     reviews = db.execute("""
-        SELECT r.*, 
-               c.title,
-               c.poster_url,
-               c.type
+        SELECT r.*, c.title, c.poster_url, c.type
         FROM reviews r
         JOIN content c ON r.content_id = c.id
         WHERE r.user_id = ?
         ORDER BY r.created_at DESC
     """, (session["user_id"],)).fetchall()
-    
+
     top_rated = db.execute("""
-        SELECT
-            c.id as content_id,
-            c.title,
-            c.poster_url,
-            r.rating
+        SELECT c.id as content_id, c.title, c.poster_url, r.rating
         FROM reviews r
         JOIN content c ON r.content_id = c.id
         WHERE r.user_id = ?
@@ -1017,7 +959,6 @@ def set_avatar():
         return {"success": False}, 403
 
     avatar_name = request.json.get("avatar")
-
     db = get_db()
     db.execute(
         "UPDATE users SET avatar_type = ?, avatar_value = ? WHERE id = ?",
@@ -1025,13 +966,11 @@ def set_avatar():
     )
     db.commit()
     db.close()
-
     return {"success": True}
 
 
 UPLOAD_FOLDER = "static/uploads/avatars"
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
-
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
 
@@ -1055,7 +994,6 @@ def upload_avatar():
     if file and allowed_file(file.filename):
         filename = f"user_{session['user_id']}.png"
         filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
-
         file.save(filepath)
 
         db = get_db()
@@ -1072,32 +1010,24 @@ def upload_avatar():
 
 @app.route("/welcome")
 def welcome():
-
-    # if already selected once → skip welcome
     if request.args.get("type"):
         return redirect(f"/?type={request.args.get('type')}")
-
     return render_template("welcome.html")
-
 
 
 @app.route("/upgrade/<plan>")
 def upgrade(plan):
     user_id = session.get("user_id")
 
-    # 🔐 Step 1 — Login check
     if not user_id:
         session["next"] = request.path
         return redirect("/login")
 
-    # 🔥 Step 2 — Payment check (PUT IT HERE)
     if not session.get("payment_done"):
         return redirect(f"/payment?plan={plan}")
 
-    # 🔥 Step 3 — Clear flag (VERY IMPORTANT)
     session.pop("payment_done", None)
 
-    # 🧠 Step 4 — Do actual upgrade
     db = get_db()
     cursor = db.cursor()
 
@@ -1107,10 +1037,8 @@ def upgrade(plan):
         expiry = datetime.now() + timedelta(days=365)
 
     cursor.execute("""
-        UPDATE users 
-        SET is_premium = 1,
-            premium_type = ?,
-            premium_expiry = ?
+        UPDATE users
+        SET is_premium = 1, premium_type = ?, premium_expiry = ?
         WHERE id = ?
     """, (plan, expiry.strftime("%Y-%m-%d %H:%M:%S"), user_id))
 
@@ -1129,13 +1057,12 @@ def premium_page():
         return redirect("/login")
 
     plan = request.args.get("plan", "monthly")
-    return render_template("premium.html", selected_plan=plan,razorpay_key_id=os.getenv("RAZORPAY_KEY_ID"))
+    return render_template("premium.html", selected_plan=plan, razorpay_key_id=os.getenv("RAZORPAY_KEY_ID"))
 
 @app.route("/payment")
 def payment():
     user_id = session.get("user_id")
 
-    # 🔐 FORCE LOGIN FIRST
     if not user_id:
         session["next"] = request.full_path
         return redirect("/login")
@@ -1143,10 +1070,6 @@ def payment():
     plan = request.args.get("plan", "monthly")
     return render_template("payment.html", plan=plan)
 
-# @app.route("/pay/<plan>")
-# def pay(plan):
-#     session["payment_done"] = True
-#     return redirect(f"/upgrade/{plan}")
 
 import razorpay
 
@@ -1154,7 +1077,7 @@ client = razorpay.Client(auth=(os.getenv("RAZORPAY_KEY_ID"), os.getenv("RAZORPAY
 
 @app.route("/create-order/<plan>")
 def create_order(plan):
-    amount = 4900 if plan == "monthly" else 39900  # paise
+    amount = 4900 if plan == "monthly" else 39900
 
     order = client.order.create({
         "amount": amount,
@@ -1162,11 +1085,8 @@ def create_order(plan):
         "payment_capture": 1
     })
 
-    return {
-        "order_id": order["id"],
-        "amount": amount
-    }
-    
+    return {"order_id": order["id"], "amount": amount}
+
 @app.route("/payment-success/<plan>")
 def payment_success(plan):
     session["payment_done"] = True
@@ -1180,15 +1100,9 @@ def cancel_membership():
         return redirect("/login")
 
     db = get_db()
-
     db.execute("""
-        UPDATE users
-        SET is_premium = 0,
-            premium_type = NULL,
-            premium_expiry = NULL
-        WHERE id = ?
+        UPDATE users SET is_premium = 0, premium_type = NULL, premium_expiry = NULL WHERE id = ?
     """, (user_id,))
-
     db.commit()
 
     return redirect("/profile")
@@ -1203,7 +1117,6 @@ def nexi_chat():
     if not message:
         return jsonify({"error": "Empty message"}), 400
 
-    # Inject logged-in user's genre preferences as context
     context_note = ""
     user_id = session.get("user_id")
     if user_id:
