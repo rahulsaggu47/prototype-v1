@@ -41,7 +41,7 @@ groq_client = Groq(api_key=GROQ_API_KEY)
 #  Set RENDER_EXTERNAL_URL in your Render environment variables,
 #  e.g.  https://nextwatch-xxxx.onrender.com
 # ================================================================
-RENDER_EXTERNAL_URL = os.getenv("RENDER_EXTERNAL_URL", "").rstrip("/")
+RENDER_EXTERNAL_URL = os.getenv("https://nextwatch-w3wi.onrender.com", "").rstrip("/")
 
 def _keep_alive():
     import time
