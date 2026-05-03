@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 import os
 import threading
-import requests as _req          # aliased — don't shadow Flask's `request`
+import urllib.request as _urllib  # stdlib — no extra dependency needed
 from groq import Groq
 from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -50,8 +50,8 @@ def _keep_alive():
         if not RENDER_EXTERNAL_URL:
             continue
         try:
-            resp = _req.get(f"{RENDER_EXTERNAL_URL}/ping", timeout=10)
-            print(f"[keep-alive] ping → {resp.status_code}")
+            resp = _urllib.urlopen(f"{RENDER_EXTERNAL_URL}/ping", timeout=10)
+            print(f"[keep-alive] ping → {resp.status}")
         except Exception as exc:
             print(f"[keep-alive] ping failed: {exc}")
 
@@ -294,6 +294,7 @@ SPOTLIGHT_VIDEO_MAP = {
     254: "/static/videos/love_is_war_movie.mp4",
     469: "/static/videos/tangled.mp4",
     614: "/static/videos/cmp.mp4",
+    1707: "/static/videos/phm.mp4",
     513: "/static/videos/thor.mp4"
 }
 
@@ -1189,4 +1190,5 @@ def admin_chat_logs():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=False)
