@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 import os
-import threading
-import urllib.request as _urllib  # stdlib — no extra dependency needed
+
+
 from groq import Groq
 from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -36,31 +36,7 @@ GROQ_MODEL   = "llama-3.3-70b-versatile"
 
 groq_client = Groq(api_key=GROQ_API_KEY)
 
-# ================================================================
-#  KEEP-ALIVE — pings /ping every 10 minutes so Render never sleeps
-#  Set RENDER_EXTERNAL_URL in your Render environment variables,
-#  e.g.  https://nextwatch-xxxx.onrender.com
-# ================================================================
-RENDER_EXTERNAL_URL = os.getenv("https://nextwatch-w3wi.onrender.com", "").rstrip("/")
 
-def _keep_alive():
-    import time
-    while True:
-        time.sleep(10 * 60)   # wait 10 minutes between pings
-        if not RENDER_EXTERNAL_URL:
-            continue
-        try:
-            resp = _urllib.urlopen(f"{RENDER_EXTERNAL_URL}/ping", timeout=10)
-            print(f"[keep-alive] ping → {resp.status}")
-        except Exception as exc:
-            print(f"[keep-alive] ping failed: {exc}")
-
-# Only start one thread — not in the Werkzeug reloader child process
-if os.environ.get("WERKZEUG_RUN_MAIN") != "true":
-    _ka_thread = threading.Thread(target=_keep_alive, daemon=True)
-    _ka_thread.start()
-
-# ================================================================
 
 NEXI_SYSTEM_PROMPT = """You are Nexi, the AI assistant for NextWatch — a personalized anime and movie discovery platform.
 
