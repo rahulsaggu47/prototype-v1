@@ -47,7 +47,6 @@
         </div>
         {% if content.description %}<p class="hero-description">{{ content.description[:280] }}</p>{% endif %}
         <div class="cta-row">
-          <!-- ▶ Watch Now — opens streaming modal -->
           <button class="btn-primary" id="watchNowBtn">▶ Watch Now</button>
 
           {% if content.trailer_url %}
@@ -58,7 +57,24 @@
             <span class="heart-icon">♡</span><span class="fav-text">Add to Favorites</span>
           </button>
 
+          <!-- Watchlist dropdown -->
+          <div class="wl-dropdown" id="wlDropdown">
+            <button class="btn-ghost" id="wlBtn">
+              <span>📋</span><span>Add to Watchlist</span>
+            </button>
+            <div class="wl-menu" id="wlMenu">
+              <button class="wl-menu-item" data-wl-action="plan_to_watch">📋 Plan to Watch</button>
+              <button class="wl-menu-item" data-wl-action="completed">✅ Mark as Completed</button>
+              <!-- Remove option — hidden by default, shown only when in watchlist -->
+              <div class="wl-menu-divider" id="wlDivider" style="display:none"></div>
+              <button class="wl-menu-item wl-menu-remove" data-wl-action="remove" id="wlRemoveBtn" style="display:none">✕ Remove from Watchlist</button>
+            </div>
+          </div>
+
           <button class="btn-ghost" onclick="switchTab('reviews')">💬 Reviews</button>
+
+          <!-- Not Interested — hidden if already dismissed -->
+          <button class="btn-dismiss" id="dismissBtn">✕ Not Interested</button>
         </div>
       </div>
     </div>
@@ -277,6 +293,103 @@ favBtn.addEventListener("click", async () => {
   if (data.login_required) { showToast("🔒 Please log in first", "error"); return; }
   if (data.success) setFavActive(!isFavorite);
 });
+
+// ── Watchlist ────────────────────────────────────────────────
+let watchlistStatus = null;
+
+const wlBtn       = document.getElementById("wlBtn");
+const wlMenu      = document.getElementById("wlMenu");
+const wlRemoveBtn = document.getElementById("wlRemoveBtn");
+const wlDivider   = document.getElementById("wlDivider");
+
+function setWatchlistState(status) {
+  watchlistStatus = status;
+  if (!wlBtn) return;
+
+  // Show / hide the Remove option based on whether item is in list
+  if (status) {
+    wlRemoveBtn.style.display = "block";
+    wlDivider.style.display   = "block";
+  } else {
+    wlRemoveBtn.style.display = "none";
+    wlDivider.style.display   = "none";
+  }
+
+  if (status === "plan_to_watch") {
+    wlBtn.innerHTML   = `<span>📋</span><span>Plan to Watch</span>`;
+    wlBtn.className   = "btn-ghost wl-active-plan";
+  } else if (status === "completed") {
+    wlBtn.innerHTML   = `<span>✅</span><span>Completed</span>`;
+    wlBtn.className   = "btn-ghost wl-active-done";
+  } else {
+    wlBtn.innerHTML   = `<span>📋</span><span>Add to Watchlist</span>`;
+    wlBtn.className   = "btn-ghost";
+  }
+}
+
+// Load current status on page load
+fetch(`/api/watchlist/status/${contentId}`)
+  .then(r => r.json())
+  .then(d => setWatchlistState(d.status));
+
+// Toggle dropdown
+wlBtn?.addEventListener("click", (e) => {
+  e.stopPropagation();
+  wlMenu.classList.toggle("open");
+});
+document.addEventListener("click", () => wlMenu?.classList.remove("open"));
+
+// Menu actions
+document.querySelectorAll("[data-wl-action]").forEach(btn => {
+  btn.addEventListener("click", async () => {
+    const action = btn.dataset.wlAction;
+    wlMenu.classList.remove("open");
+
+    if (action === "remove") {
+      const res  = await fetch("/api/watchlist/remove", {
+        method: "POST", headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({ content_id: contentId })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setWatchlistState(null);
+        showToast("Removed from watchlist", "success");
+      }
+    } else {
+      const res  = await fetch("/api/watchlist/add", {
+        method: "POST", headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({ content_id: contentId, status: action })
+      });
+      const data = await res.json();
+      if (data.login_required) { showToast("🔒 Please log in first", "error"); return; }
+      if (data.success) {
+        setWatchlistState(action);
+        showToast(
+          action === "plan_to_watch" ? "📋 Added to Plan to Watch" : "✅ Marked as Completed",
+          "success"
+        );
+      }
+    }
+  });
+});
+
+// ── Not Interested (dismiss) ─────────────────────────────────
+const dismissBtn = document.getElementById("dismissBtn");
+
+dismissBtn?.addEventListener("click", async () => {
+  const res  = await fetch("/api/dismiss", {
+    method: "POST", headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({ content_id: contentId })
+  });
+  const data = await res.json();
+  if (data.login_required) { showToast("🔒 Please log in first", "error"); return; }
+  if (data.success) {
+    dismissBtn.textContent = "✓ Dismissed";
+    dismissBtn.disabled    = true;
+    showToast("Got it — we won't recommend this again", "success");
+  }
+});
+
 
 // ── Stars ────────────────────────────────────────────────────
 let selectedRating = 0;

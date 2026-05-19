@@ -225,11 +225,10 @@
         </a>
     </div>
 
-    <a
-        href="{% if session.get('user_id') %}/favorites{% else %}/login{% endif %}"
-        class="toggle-btn active">
-        ❤️ Favorites
-    </a>
+    <div style="display:flex;gap:10px">
+    <a href="/watchlist" class="toggle-btn active">📋 Watchlist</a>
+    <a href="{% if session.get('user_id') %}/favorites{% else %}/login{% endif %}" class="toggle-btn active">❤️ Favorites</a>
+    </div>
 
 </div>
 
@@ -322,6 +321,27 @@
     </section>
     {% endif %}
 
+    {% if session.get("user_id") %}
+
+    <!-- Plan to Watch row -->
+    <section class="row-section hidden" id="planToWatchSection">
+        <h2>📋 Your Plan to Watch</h2>
+        <div class="recommended-meta">
+            <p class="recommended-reason">Pick up where you left off</p>
+        </div>
+        <div id="planToWatchRow" class="horizontal-row"></div>
+    </section>
+
+    <!-- Completed row -->
+    <section class="row-section hidden" id="completedSection">
+        <h2>✅ Recently Completed</h2>
+        <div class="recommended-meta">
+            <p class="recommended-reason">Titles you've already watched</p>
+        </div>
+        <div id="completedRow" class="horizontal-row"></div>
+    </section>
+
+    {% endif %}
 
     <!-- Trending -->
     <h2>🔥 Trending</h2>
@@ -813,6 +833,58 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
 });
+
+document.addEventListener("DOMContentLoaded", () => {
+    fetchWatchlistRows();
+});
+
+function fetchWatchlistRows() {
+    const contentType = "{{ content_type }}";
+
+    fetch(`/api/watchlist/homerow?type=${contentType}`)
+        .then(res => res.json())
+        .then(data => {
+
+            // Plan to Watch
+            const planSection = document.getElementById("planToWatchSection");
+            const planRow     = document.getElementById("planToWatchRow");
+            if (planSection && data.plan && data.plan.length > 0) {
+                planSection.classList.remove("hidden");
+                planRow.innerHTML = "";
+                data.plan.forEach(item => {
+                    const card = document.createElement("a");
+                    card.href      = `/content/${item.id}`;
+                    card.className = "card";
+                    card.innerHTML = `
+                        <img src="${item.poster_url}" alt="${item.title}">
+                        <p>${item.title}</p>
+                    `;
+                    planRow.appendChild(card);
+                });
+                autoScrollRow("planToWatchRow");
+            }
+
+            // Completed
+            const doneSection = document.getElementById("completedSection");
+            const doneRow     = document.getElementById("completedRow");
+            if (doneSection && data.completed && data.completed.length > 0) {
+                doneSection.classList.remove("hidden");
+                doneRow.innerHTML = "";
+                data.completed.forEach(item => {
+                    const card = document.createElement("a");
+                    card.href      = `/content/${item.id}`;
+                    card.className = "card";
+                    card.innerHTML = `
+                        <img src="${item.poster_url}" alt="${item.title}">
+                        <p>${item.title}</p>
+                    `;
+                    doneRow.appendChild(card);
+                });
+                autoScrollRow("completedRow");
+            }
+        })
+        .catch(err => console.log("Watchlist rows skipped:", err));
+}
 
 function autoScrollRow(rowId) {
     const row = document.getElementById(rowId);

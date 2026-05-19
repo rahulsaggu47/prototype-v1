@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=0.5, minimum-scale=0.3, maximum-scale=3.0">
+  <title>404 — Page Not Found · NextWatch</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #04050e;
+      color: #e8eaf0;
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      text-align: center;
+      padding: 24px;
+    }
+
+    /* Star layers */
+    body::before, body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.35) 50%, transparent 51%),
+        radial-gradient(1px 1px at 80% 70%, rgba(255,255,255,0.25) 50%, transparent 51%),
+        radial-gradient(1px 1px at 50% 90%, rgba(255,255,255,0.2)  50%, transparent 51%),
+        radial-gradient(1px 1px at 10% 60%, rgba(255,255,255,0.15) 50%, transparent 51%);
+      background-size: 500px 500px;
+      pointer-events: none;
+      z-index: 0;
+    }
+    body::after {
+      background-image:
+        radial-gradient(1.5px 1.5px at 30% 20%, rgba(255,255,255,0.5) 50%, transparent 51%),
+        radial-gradient(1.5px 1.5px at 65% 55%, rgba(255,255,255,0.4) 50%, transparent 51%),
+        radial-gradient(1.5px 1.5px at 85% 30%, rgba(255,255,255,0.3) 50%, transparent 51%);
+      background-size: 350px 350px;
+      animation: starsDrift 80s linear infinite;
+    }
+    @keyframes starsDrift { from{transform:translateY(0)} to{transform:translateY(-1400px)} }
+
+    .error-wrap {
+      position: relative; z-index: 1;
+      display: flex; flex-direction: column; align-items: center; gap: 20px;
+      max-width: 600px;
+    }
+
+    .error-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 22px; letter-spacing: 3px;
+      background: linear-gradient(90deg, #7f5cff, #ec4899);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      text-decoration: none; margin-bottom: 8px;
+    }
+
+    .error-code {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(100px, 18vw, 180px);
+      letter-spacing: 8px; line-height: 1;
+      background: linear-gradient(135deg, #7f5cff 0%, #ec4899 60%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 40px rgba(127,92,255,0.3));
+    }
+
+    .error-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(28px, 5vw, 44px);
+      letter-spacing: 3px; color: #fff;
+    }
+
+    .error-sub {
+      font-size: 15px; font-weight: 300; color: #6b7280;
+      line-height: 1.7; max-width: 400px;
+    }
+
+    .error-divider {
+      width: 60px; height: 2px;
+      background: linear-gradient(90deg, #7f5cff, #ec4899);
+      border-radius: 2px;
+    }
+
+    .error-actions {
+      display: flex; gap: 14px; flex-wrap: wrap; justify-content: center;
+      margin-top: 8px;
+    }
+
+    .btn-home {
+      padding: 13px 32px; border-radius: 12px;
+      background: linear-gradient(135deg, #7f5cff, #ec4899);
+      color: #fff; font-size: 14px; font-weight: 600;
+      text-decoration: none; transition: all 0.2s;
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn-home:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(127,92,255,0.4); }
+
+    .btn-back {
+      padding: 13px 28px; border-radius: 12px;
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+      color: #e8eaf0; font-size: 14px; font-weight: 600;
+      text-decoration: none; transition: all 0.2s;
+    }
+    .btn-back:hover { background: rgba(255,255,255,0.1); }
+
+    .error-glow {
+      position: fixed; top: 40%; left: 50%; transform: translate(-50%, -50%);
+      width: 600px; height: 600px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(127,92,255,0.07) 0%, transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="error-glow"></div>
+
+  <div class="error-wrap">
+    <a href="/" class="error-logo">NextWatch</a>
+
+    <div class="error-code">404</div>
+
+    <h1 class="error-title">Page Not Found</h1>
+
+    <div class="error-divider"></div>
+
+    <p class="error-sub">
+      Looks like this page got lost somewhere between dimensions.
+      The content you're looking for doesn't exist or may have been removed.
+    </p>
+
+    <div class="error-actions">
+      <a href="/" class="btn-home">✦ Back to Home</a>
+      <a href="javascript:history.back()" class="btn-back">← Go Back</a>
+    </div>
+  </div>
+</body>
+</html>

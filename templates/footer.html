@@ -3,13 +3,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 </head>
 
-
 <footer class="site-footer">
 
   <!-- SCROLLING TICKER -->
   <div class="footer-ticker">
     <div class="ticker-track">
-      <!-- Duplicated for seamless loop -->
       <span class="ticker-item"><span class="ticker-dot"></span>Discover Anime</span>
       <span class="ticker-item"><span class="ticker-dot"></span>Explore Movies</span>
       <span class="ticker-item"><span class="ticker-dot"></span>Curated Recommendations</span>
@@ -36,10 +34,12 @@
       <p class="footer-tagline">
         Discover anime and movies curated to your taste. Built by two students who love great stories.
       </p>
+      <!-- Single button opens the team socials modal -->
       <div class="footer-socials">
-        <a href="#" class="social-btn" title="GitHub">⌨️</a>
-        <a href="#" class="social-btn" title="Instagram">📸</a>
-        <a href="#" class="social-btn" title="Twitter">🐦</a>
+        <button class="social-btn" onclick="openTeamModal()" title="Meet the Team">👥</button>
+        <button class="social-btn" onclick="openTeamModal()" title="GitHub">⌨️</button>
+        <button class="social-btn" onclick="openTeamModal()" title="Instagram">📸</button>
+        <button class="social-btn" onclick="openTeamModal()" title="LinkedIn">💼</button>
       </div>
     </div>
 
@@ -51,6 +51,7 @@
         <li><a href="/?type=anime">Browse Anime</a></li>
         <li><a href="/?type=movie">Browse Movies</a></li>
         <li><a href="/favorites">Favorites</a></li>
+        <li><a href="/watchlist">My Watchlist</a></li>
       </ul>
     </div>
 
@@ -76,6 +77,7 @@
         <li><a href="/welcome#about-strip">About NextWatch</a></li>
         <li><a href="/welcome#how-section">How It Works</a></li>
         <li><a href="/welcome#team-section">Meet the Team</a></li>
+        <li><a href="javascript:void(0)" onclick="openTeamModal()">Our Socials</a></li>
         {% if not user %}
         <li><a href="/signup">Join Free</a></li>
         {% endif %}
@@ -87,9 +89,127 @@
   <!-- BOTTOM BAR -->
   <div class="footer-bottom">
     <p class="footer-copy">© 2026 <span>NextWatch</span> · All rights reserved</p>
-    <!-- <p class="footer-made-with">Made with <span class="heart-beat">♥</span> by Rahul &amp; Akriti</p> -->
-     <p class="footer-made-with">Despite everything, It's still you.</p>
+    <p class="footer-made-with">Despite everything, It's still you.</p>
     <div class="footer-badge">🎓 College Project · 2026</div>
   </div>
 
 </footer>
+
+
+<!-- ══════════════════════════════════════════════════════
+     TEAM SOCIALS MODAL
+══════════════════════════════════════════════════════ -->
+<div class="team-modal-overlay" id="teamModal" onclick="handleTeamModalClick(event)">
+  <div class="team-modal-box">
+
+    <!-- Accent line -->
+    <div class="team-modal-accent"></div>
+
+    <!-- Header -->
+    <div class="team-modal-head">
+      <div>
+        <p class="team-modal-eyebrow">The people behind the project</p>
+        <h2 class="team-modal-title">Meet the Team</h2>
+      </div>
+      <button class="team-modal-close" onclick="closeTeamModal()">✕</button>
+    </div>
+
+    <!-- Cards -->
+    <div class="team-modal-cards">
+
+      <!-- Rahul -->
+      <div class="team-modal-card">
+        <div class="team-mc-avatar-wrap">
+          <div class="team-mc-avatar-ring rahul-ring">
+            <div class="team-mc-avatar-inner">
+              <img src="/static/images/rahul.jpeg"
+                   style="width:140%;height:140%;object-fit:contain;"
+                   onerror="this.style.display='none'">
+            </div>
+          </div>
+          <div class="team-mc-online-dot"></div>
+        </div>
+        <div class="team-mc-info">
+          <h3 class="team-mc-name">Rahul Saggu</h3>
+          <p class="team-mc-role">Co-Developer · UI/UX · Backend</p>
+          <p class="team-mc-aka">aka Fate</p>
+        </div>
+        <div class="team-mc-links">
+          <a href="https://github.com/rahulsaggu47" target="_blank" rel="noopener" class="social-link github">
+            <span class="social-link-icon">⌨️</span>
+            <span>GitHub</span>
+          </a>
+          <a href="https://www.instagram.com/rahul_saggu47/" target="_blank" rel="noopener" class="social-link insta">
+            <span class="social-link-icon">📸</span>
+            <span>Instagram</span>
+          </a>
+          <!-- <a href="https://linkedin.com/in/rahulsaggu" target="_blank" rel="noopener" class="social-link linkedin">
+            <span class="social-link-icon">💼</span>
+            <span>LinkedIn</span>
+          </a> -->
+        </div>
+      </div>
+
+      <!-- Divider -->
+      <div class="team-mc-divider"></div>
+
+      <!-- Akriti -->
+      <div class="team-modal-card">
+        <div class="team-mc-avatar-wrap">
+          <div class="team-mc-avatar-ring akriti-ring">
+            <div class="team-mc-avatar-inner">
+              <img src="/static/images/akriti.jpg"
+                   style="width:170%;height:170%;object-fit:contain;"
+                   onerror="this.style.display='none'">
+            </div>
+          </div>
+          <div class="team-mc-online-dot"></div>
+        </div>
+        <div class="team-mc-info">
+          <h3 class="team-mc-name">Akriti</h3>
+          <p class="team-mc-role">Co-Developer · Content · Research</p>
+          <p class="team-mc-aka">aka Thakur Ji</p>
+        </div>
+        <div class="team-mc-links">
+          <a href="https://github.com/thakurakriti281" target="_blank" rel="noopener" class="social-link github">
+            <span class="social-link-icon">⌨️</span>
+            <span>GitHub</span>
+          </a>
+          <a href="https://www.instagram.com/blac_kspadez/" target="_blank" rel="noopener" class="social-link insta">
+            <span class="social-link-icon">📸</span>
+            <span>Instagram</span>
+          </a>
+          <!-- <a href="https://linkedin.com/in/akriti" target="_blank" rel="noopener" class="social-link linkedin">
+            <span class="social-link-icon">💼</span>
+            <span>LinkedIn</span>
+          </a> -->
+        </div>
+      </div>
+
+    </div><!-- /cards -->
+
+    <!-- Footer note -->
+    <p class="team-modal-note">
+      Built with <span style="color:#ec4899">♥</span> as a BCA Final Year Project · Trinity College, Jalandhar · 2026
+    </p>
+
+  </div>
+</div>
+
+
+<script>
+function openTeamModal() {
+  document.getElementById("teamModal").classList.add("open");
+  document.body.style.overflow = "hidden";
+}
+function closeTeamModal() {
+  document.getElementById("teamModal").classList.remove("open");
+  document.body.style.overflow = "";
+}
+function handleTeamModalClick(e) {
+  if (e.target === document.getElementById("teamModal")) closeTeamModal();
+}
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") closeTeamModal();
+});
+</script>

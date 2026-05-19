@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=0.5, minimum-scale=0.3, maximum-scale=3.0">
+  <title>500 — Server Error · NextWatch</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #04050e;
+      color: #e8eaf0;
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      text-align: center;
+      padding: 24px;
+    }
+
+    body::after {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        radial-gradient(1.5px 1.5px at 25% 25%, rgba(255,255,255,0.4) 50%, transparent 51%),
+        radial-gradient(1px   1px   at 70% 60%, rgba(255,255,255,0.3) 50%, transparent 51%),
+        radial-gradient(1px   1px   at 45% 80%, rgba(255,255,255,0.2) 50%, transparent 51%);
+      background-size: 400px 400px;
+      animation: starsDrift 90s linear infinite;
+      pointer-events: none; z-index: 0;
+    }
+    @keyframes starsDrift { from{transform:translateY(0)} to{transform:translateY(-1400px)} }
+
+    .error-wrap {
+      position: relative; z-index: 1;
+      display: flex; flex-direction: column; align-items: center; gap: 20px;
+      max-width: 600px;
+    }
+
+    .error-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 22px; letter-spacing: 3px;
+      background: linear-gradient(90deg, #7f5cff, #ec4899);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      text-decoration: none; margin-bottom: 8px;
+    }
+
+    .error-code {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(100px, 18vw, 180px);
+      letter-spacing: 8px; line-height: 1;
+      background: linear-gradient(135deg, #ec4899 0%, #f97316 60%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 40px rgba(236,72,153,0.3));
+    }
+
+    .error-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(28px, 5vw, 44px);
+      letter-spacing: 3px; color: #fff;
+    }
+
+    .error-divider {
+      width: 60px; height: 2px;
+      background: linear-gradient(90deg, #ec4899, #f97316);
+      border-radius: 2px;
+    }
+
+    .error-sub {
+      font-size: 15px; font-weight: 300; color: #6b7280;
+      line-height: 1.7; max-width: 420px;
+    }
+
+    .error-actions {
+      display: flex; gap: 14px; flex-wrap: wrap; justify-content: center;
+      margin-top: 8px;
+    }
+
+    .btn-home {
+      padding: 13px 32px; border-radius: 12px;
+      background: linear-gradient(135deg, #ec4899, #f97316);
+      color: #fff; font-size: 14px; font-weight: 600;
+      text-decoration: none; transition: all 0.2s;
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn-home:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(236,72,153,0.4); }
+
+    .btn-back {
+      padding: 13px 28px; border-radius: 12px;
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+      color: #e8eaf0; font-size: 14px; font-weight: 600;
+      text-decoration: none; transition: all 0.2s;
+    }
+    .btn-back:hover { background: rgba(255,255,255,0.1); }
+
+    .error-glow {
+      position: fixed; top: 40%; left: 50%; transform: translate(-50%, -50%);
+      width: 600px; height: 600px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(236,72,153,0.07) 0%, transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+
+    /* Animated glitch on the 500 */
+    .error-code {
+      animation: glitch 4s ease-in-out infinite;
+    }
+    @keyframes glitch {
+      0%,90%,100% { transform: translateX(0); filter: drop-shadow(0 0 40px rgba(236,72,153,0.3)); }
+      92%  { transform: translateX(-3px); filter: drop-shadow(3px 0 0 #7f5cff) drop-shadow(-3px 0 0 #ec4899); }
+      94%  { transform: translateX(3px);  filter: drop-shadow(-3px 0 0 #7f5cff) drop-shadow(3px 0 0 #ec4899); }
+      96%  { transform: translateX(-1px); }
+      98%  { transform: translateX(1px); }
+    }
+  </style>
+</head>
+<body>
+  <div class="error-glow"></div>
+
+  <div class="error-wrap">
+    <a href="/" class="error-logo">NextWatch</a>
+
+    <div class="error-code">500</div>
+
+    <h1 class="error-title">Something Broke</h1>
+
+    <div class="error-divider"></div>
+
+    <p class="error-sub">
+      Our server ran into an unexpected problem. This isn't your fault —
+      we've been notified and are working on a fix.
+      Try refreshing or come back in a moment.
+    </p>
+
+    <div class="error-actions">
+      <a href="/" class="btn-home">✦ Back to Home</a>
+      <a href="javascript:location.reload()" class="btn-back">↻ Refresh</a>
+    </div>
+  </div>
+</body>
+</html>

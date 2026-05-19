@@ -1,31 +1,637 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Admin Panel · NextWatch</title>
+    <title>Admin Dashboard · NextWatch</title>
     <link rel="stylesheet" href="/static/css/admin.css">
+    <link rel="stylesheet" href="/static/css/admin_dashboard.css">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
 
 <div class="admin-layout">
 
     <aside class="admin-sidebar">
-        <h2>NextWatch</h2>
-        <a href="/admin">Dashboard</a>
-        <a href="/admin/spotlight">Spotlight</a>
-        <a href="/admin/picks">Curated Picks</a>
-        <a href="/admin/chat-logs">Chat Logs</a>
-        <a href="/">← Back to App</a>
+        <div class="sidebar-logo">NextWatch</div>
+        <nav>
+            <a href="/admin" class="sidebar-link active">📊 Dashboard</a>
+            <a href="/admin/spotlight" class="sidebar-link">🎬 Spotlight</a>
+            <a href="/admin/picks" class="sidebar-link">⭐ Curated Picks</a>
+            <a href="/admin/chat-logs" class="sidebar-link">💬 Chat Logs</a>
+            <a href="/" class="sidebar-link">← Back to App</a>
+        </nav>
     </aside>
-    
+
     <main class="admin-content">
         {% block content %}
-        <h1>Admin Dashboard</h1>
-        <p>Welcome. Choose an action from the sidebar.</p>
+
+        <!-- PAGE HEADER -->
+        <div class="dash-header">
+            <div>
+                <h1 class="dash-title">Dashboard</h1>
+                <p class="dash-sub">Live overview of NextWatch activity</p>
+            </div>
+            <div class="dash-health">
+                <span class="health-dot"></span>
+                <span class="health-label">Server Online</span>
+                <span class="health-time" id="serverTime"></span>
+            </div>
+        </div>
+
+        <!-- STAT CARDS -->
+        <div class="stat-grid">
+            <div class="stat-card">
+                <div class="stat-icon">👥</div>
+                <div class="stat-info">
+                    <div class="stat-num">{{ stats.total_users }}</div>
+                    <div class="stat-label">Total Users</div>
+                </div>
+                <div class="stat-sub">+{{ stats.new_users_today }} today · +{{ stats.new_users_week }} this week</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🎬</div>
+                <div class="stat-info">
+                    <div class="stat-num">{{ stats.total_content }}</div>
+                    <div class="stat-label">Total Titles</div>
+                </div>
+                <div class="stat-sub">{{ stats.total_anime }} anime · {{ stats.total_movies }} movies</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">💬</div>
+                <div class="stat-info">
+                    <div class="stat-num">{{ stats.total_reviews }}</div>
+                    <div class="stat-label">Reviews</div>
+                </div>
+                <div class="stat-sub">Avg rating {{ stats.avg_rating }}/10</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">❤️</div>
+                <div class="stat-info">
+                    <div class="stat-num">{{ stats.total_favorites }}</div>
+                    <div class="stat-label">Favorites Saved</div>
+                </div>
+                <div class="stat-sub">Across all users</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">✦</div>
+                <div class="stat-info">
+                    <div class="stat-num">{{ stats.total_chats }}</div>
+                    <div class="stat-label">Nexi Messages</div>
+                </div>
+                <div class="stat-sub">Total AI conversations</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⭐</div>
+                <div class="stat-info">
+                    <div class="stat-num">{{ stats.total_premium }}</div>
+                    <div class="stat-label">Premium Users</div>
+                </div>
+                <div class="stat-sub">{{ stats.premium_monthly }} monthly · {{ stats.premium_yearly }} yearly</div>
+            </div>
+        </div>
+
+        <!-- MAIN GRID -->
+        <div class="dash-grid">
+
+            <!-- RECENT ACTIVITY FEED -->
+            <div class="dash-panel panel-full">
+                <div class="panel-head">
+                    <h2 class="panel-title">⚡ Recent Activity</h2>
+                    <span class="panel-count" id="activityCount">Loading…</span>
+                </div>
+                <div class="activity-feed" id="activityFeed">
+                    <div class="activity-loading">Loading activity…</div>
+                </div>
+            </div>
+
+            <!-- GENRE BREAKDOWN -->
+            <div class="dash-panel">
+                <div class="panel-head">
+                    <h2 class="panel-title">🎭 Genre Breakdown</h2>
+                    <span class="panel-count">User preferences</span>
+                </div>
+                <div class="genre-chart" id="genreChart">
+                    <div class="activity-loading">Loading…</div>
+                </div>
+            </div>
+
+            <!-- MOST FAVORITED -->
+            <div class="dash-panel">
+                <div class="panel-head">
+                    <h2 class="panel-title">🔥 Most Favorited</h2>
+                </div>
+                <div class="rank-list">
+                    {% for item in most_favorited %}
+                    <div class="rank-item">
+                        <span class="rank-num">#{{ loop.index }}</span>
+                        <img src="{{ item.poster_url }}" class="rank-poster" alt="">
+                        <div class="rank-info">
+                            <div class="rank-title">{{ item.title }}</div>
+                            <div class="rank-meta">{{ item.type | capitalize }} · {{ item.fav_count }} saves</div>
+                        </div>
+                        <a href="/content/{{ item.id }}" class="rank-link" target="_blank">→</a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- MOST REVIEWED -->
+            <div class="dash-panel">
+                <div class="panel-head">
+                    <h2 class="panel-title">📝 Most Reviewed</h2>
+                </div>
+                <div class="rank-list">
+                    {% for item in most_reviewed %}
+                    <div class="rank-item">
+                        <span class="rank-num">#{{ loop.index }}</span>
+                        <img src="{{ item.poster_url }}" class="rank-poster" alt="">
+                        <div class="rank-info">
+                            <div class="rank-title">{{ item.title }}</div>
+                            <div class="rank-meta">{{ item.review_count }} reviews · avg ★ {{ item.avg_r }}</div>
+                        </div>
+                        <a href="/content/{{ item.id }}" class="rank-link" target="_blank">→</a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- RECENT SIGNUPS -->
+            <div class="dash-panel">
+                <div class="panel-head">
+                    <h2 class="panel-title">🆕 Recent Signups</h2>
+                    <span class="panel-count">{{ recent_users|length }} shown</span>
+                </div>
+                <table class="dash-table">
+                    <thead><tr><th>User</th><th>Joined</th><th>Premium</th><th>Action</th></tr></thead>
+                    <tbody>
+                        {% for u in recent_users %}
+                        <tr>
+                            <td>
+                                <div class="user-cell">
+                                    {% if u.avatar_type == 'custom' %}
+                                        <img src="/static/{{ u.avatar_value }}" class="mini-avatar" onerror="this.src='/static/avatars/default/anime_boy_1.jpeg'">
+                                    {% else %}
+                                        <img src="/static/avatars/default/{{ u.avatar_value }}" class="mini-avatar" onerror="this.src='/static/avatars/default/anime_boy_1.jpeg'">
+                                    {% endif %}
+                                    <span>{{ u.username }}</span>
+                                    {% if u.id in [1, 30] %}<span class="badge-admin">Admin</span>{% endif %}
+                                </div>
+                            </td>
+                            <td class="muted-cell">{{ u.created_at[:10] if u.created_at else '—' }}</td>
+                            <td>
+                                {% if u.is_premium %}<span class="badge-premium">{{ u.premium_type }}</span>
+                                {% else %}<span class="badge-free">Free</span>{% endif %}
+                            </td>
+                            <td>
+                                {% if u.id not in [1, 30] %}
+                                <button class="action-danger" onclick="banUser({{ u.id }}, '{{ u.username }}')">Ban</button>
+                                {% else %}<span class="muted-cell">—</span>{% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- RECENT REVIEWS -->
+            <div class="dash-panel">
+                <div class="panel-head">
+                    <h2 class="panel-title">💬 Recent Reviews</h2>
+                    <span class="panel-count">{{ recent_reviews|length }} shown</span>
+                </div>
+                <table class="dash-table">
+                    <thead><tr><th>User</th><th>Title</th><th>Rating</th><th>Action</th></tr></thead>
+                    <tbody>
+                        {% for r in recent_reviews %}
+                        <tr id="review-row-{{ r.id }}">
+                            <td class="muted-cell">{{ r.username }}</td>
+                            <td>
+                                <a href="/content/{{ r.content_id }}" class="table-link" target="_blank">
+                                    {{ r.title[:26] }}{% if r.title|length > 26 %}…{% endif %}
+                                </a>
+                            </td>
+                            <td><span class="rating-pill">★ {{ r.rating }}</span></td>
+                            <td><button class="action-danger" onclick="deleteReviewAdmin({{ r.id }})">Delete</button></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- LATEST NEXI CHATS -->
+            <div class="dash-panel panel-full">
+                <div class="panel-head">
+                    <h2 class="panel-title">✦ Latest Nexi Conversations</h2>
+                    <a href="/admin/chat-logs" class="panel-link">View all →</a>
+                </div>
+                <table class="dash-table">
+                    <thead><tr><th>User</th><th>Message</th><th>Nexi Reply</th><th>Time</th></tr></thead>
+                    <tbody>
+                        {% for log in recent_chats %}
+                        <tr>
+                            <td class="muted-cell">{{ log.username or 'Guest' }}</td>
+                            <td>{{ log.user_message[:60] }}{% if log.user_message|length > 60 %}…{% endif %}</td>
+                            <td class="muted-cell">{{ log.bot_response[:60] }}{% if log.bot_response|length > 60 %}…{% endif %}</td>
+                            <td class="muted-cell">{{ log.timestamp[:16] if log.timestamp else '—' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- CONTENT MANAGEMENT -->
+            <div class="dash-panel panel-full">
+                <div class="panel-head">
+                    <h2 class="panel-title">🗂️ Content Management</h2>
+                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+                        <input type="text" id="contentSearch" placeholder="Search titles…" class="panel-search" oninput="searchContent()">
+                        <select id="contentTypeFilter" class="panel-search" style="width:120px" onchange="searchContent()">
+                            <option value="">All types</option>
+                            <option value="anime">Anime</option>
+                            <option value="movie">Movie</option>
+                        </select>
+                        <button class="action-safe" onclick="openAddModal()">+ Add Content</button>
+                    </div>
+                </div>
+                <table class="dash-table">
+                    <thead>
+                        <tr><th>Poster</th><th>Title</th><th>Type</th><th>Year</th><th>Rating</th><th>Genres</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody id="contentTableBody">
+                        <tr><td colspan="7" class="muted-cell" style="padding:20px;text-align:center">Type a title above to search content…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- ALL USERS -->
+            <div class="dash-panel panel-full">
+                <div class="panel-head">
+                    <h2 class="panel-title">👥 All Users</h2>
+                    <input type="text" id="userSearch" placeholder="Search username…" class="panel-search" oninput="filterUsers()">
+                </div>
+                <table class="dash-table">
+                    <thead>
+                        <tr><th>ID</th><th>Username</th><th>Joined</th><th>Premium</th><th>Genres</th><th>World</th><th>Reviews</th><th>Favs</th><th>Action</th></tr>
+                    </thead>
+                    <tbody id="usersBody">
+                        {% for u in all_users %}
+                        <tr data-username="{{ u.username | lower }}" id="user-row-{{ u.id }}">
+                            <td class="muted-cell">{{ u.id }}</td>
+                            <td>
+                                <div class="user-cell">
+                                    {% if u.avatar_type == 'custom' %}
+                                        <img src="/static/{{ u.avatar_value }}" class="mini-avatar" onerror="this.src='/static/avatars/default/anime_boy_1.jpeg'">
+                                    {% else %}
+                                        <img src="/static/avatars/default/{{ u.avatar_value }}" class="mini-avatar" onerror="this.src='/static/avatars/default/anime_boy_1.jpeg'">
+                                    {% endif %}
+                                    {{ u.username }}
+                                    {% if u.id in [1, 30] %}<span class="badge-admin">Admin</span>{% endif %}
+                                </div>
+                            </td>
+                            <td class="muted-cell">{{ u.created_at[:10] if u.created_at else '—' }}</td>
+                            <td>
+                                {% if u.is_premium %}<span class="badge-premium">{{ u.premium_type }}</span>
+                                {% else %}<span class="badge-free">Free</span>{% endif %}
+                            </td>
+                            <td class="muted-cell" style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ u.preferred_genres or '—' }}</td>
+                            <td class="muted-cell">{{ u.preferred_world or '—' }}</td>
+                            <td class="muted-cell">{{ u.review_count }}</td>
+                            <td class="muted-cell">{{ u.fav_count }}</td>
+                            <td>
+                                {% if u.id not in [1, 30] %}
+                                <button class="action-danger" onclick="banUser({{ u.id }}, '{{ u.username }}')">Ban</button>
+                                {% else %}<span class="muted-cell">—</span>{% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+        </div><!-- /dash-grid -->
+
+        <!-- ════ MODALS ════ -->
+
+        <!-- Ban -->
+        <div class="modal-overlay" id="banModal">
+            <div class="modal-box">
+                <h2>Ban User?</h2>
+                <p id="banModalText"></p>
+                <div class="modal-actions">
+                    <button class="action-danger" id="banConfirmBtn">Yes, Ban</button>
+                    <button class="action-safe" onclick="closeBanModal()">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Content -->
+        <div class="modal-overlay" id="editModal">
+            <div class="modal-box modal-wide">
+                <h2>Edit Content</h2>
+                <div class="edit-form">
+                    <input type="hidden" id="editId">
+                    <div class="form-row"><label>Title</label><input type="text" id="editTitle" class="form-input"></div>
+                    <div class="form-row two-col">
+                        <div><label>Type</label>
+                            <select id="editType" class="form-input"><option value="anime">Anime</option><option value="movie">Movie</option></select>
+                        </div>
+                        <div><label>Year</label><input type="number" id="editYear" class="form-input"></div>
+                    </div>
+                    <div class="form-row two-col">
+                        <div><label>Rating</label><input type="number" step="0.1" id="editRating" class="form-input"></div>
+                        <div><label>Episodes / Duration (mins)</label><input type="number" id="editEpDur" class="form-input"></div>
+                    </div>
+                    <div class="form-row"><label>Genres <span class="muted-cell">(comma separated)</span></label><input type="text" id="editGenres" class="form-input"></div>
+                    <div class="form-row"><label>Poster URL</label><input type="text" id="editPoster" class="form-input"></div>
+                    <div class="form-row"><label>Background URL</label><input type="text" id="editBackground" class="form-input"></div>
+                    <div class="form-row"><label>Trailer URL <span class="muted-cell">(YouTube embed)</span></label><input type="text" id="editTrailer" class="form-input"></div>
+                    <div class="form-row"><label>Description</label><textarea id="editDescription" class="form-input form-textarea"></textarea></div>
+                </div>
+                <div class="modal-actions" style="margin-top:20px">
+                    <button class="action-safe" onclick="saveEdit()">Save Changes</button>
+                    <button class="action-danger" onclick="closeEditModal()">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Content -->
+        <div class="modal-overlay" id="addModal">
+            <div class="modal-box modal-wide">
+                <h2>Add Content</h2>
+                <div class="add-tabs">
+                    <button class="add-tab active" data-src="tmdb" onclick="switchAddTab('tmdb')">🎬 TMDB (Movie)</button>
+                    <button class="add-tab" data-src="jikan" onclick="switchAddTab('jikan')">🎌 Jikan (Anime)</button>
+                    <button class="add-tab" data-src="manual" onclick="switchAddTab('manual')">✏️ Manual</button>
+                </div>
+                <div class="add-source" id="src-tmdb">
+                    <p class="form-hint">Enter the TMDB Movie ID from the movie's URL on themoviedb.org. All details are fetched automatically.</p>
+                    <div class="form-row"><label>TMDB Movie ID</label><input type="number" id="tmdbId" class="form-input" placeholder="e.g. 550 for Fight Club"></div>
+                </div>
+                <div class="add-source" id="src-jikan" style="display:none">
+                    <p class="form-hint">Enter the MyAnimeList ID from the anime's URL on myanimelist.net. All details are fetched automatically.</p>
+                    <div class="form-row"><label>MAL Anime ID</label><input type="number" id="jikanId" class="form-input" placeholder="e.g. 1 for Cowboy Bebop"></div>
+                </div>
+                <div class="add-source" id="src-manual" style="display:none">
+                    <div class="form-row two-col">
+                        <div><label>Title</label><input type="text" id="manualTitle" class="form-input"></div>
+                        <div><label>Type</label><select id="manualType" class="form-input"><option value="anime">Anime</option><option value="movie">Movie</option></select></div>
+                    </div>
+                    <div class="form-row two-col">
+                        <div><label>Year</label><input type="number" id="manualYear" class="form-input"></div>
+                        <div><label>Rating</label><input type="number" step="0.1" id="manualRating" class="form-input"></div>
+                    </div>
+                    <div class="form-row"><label>Genres</label><input type="text" id="manualGenres" class="form-input" placeholder="action,drama,romance"></div>
+                    <div class="form-row"><label>Poster URL</label><input type="text" id="manualPoster" class="form-input"></div>
+                    <div class="form-row"><label>Background URL</label><input type="text" id="manualBackground" class="form-input"></div>
+                    <div class="form-row"><label>Trailer URL</label><input type="text" id="manualTrailer" class="form-input"></div>
+                    <div class="form-row"><label>Description</label><textarea id="manualDesc" class="form-input form-textarea"></textarea></div>
+                </div>
+                <div class="modal-actions" style="margin-top:20px">
+                    <button class="action-safe" onclick="submitAdd()" id="addSubmitBtn">Add Content</button>
+                    <button class="action-danger" onclick="closeAddModal()">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast -->
+        <div class="admin-toast" id="adminToast"></div>
+
+        <script>
+        // Clock
+        const clockEl = document.getElementById("serverTime");
+        clockEl.textContent = new Date().toLocaleTimeString();
+        setInterval(() => { clockEl.textContent = new Date().toLocaleTimeString(); }, 1000);
+
+        // Toast
+        function showToast(msg, isError = false) {
+            const t = document.getElementById("adminToast");
+            t.textContent = msg;
+            t.className = "admin-toast show" + (isError ? " error" : "");
+            setTimeout(() => t.className = "admin-toast", 3500);
+        }
+
+        // ── Activity Feed ────────────────────────────────────────────
+        const ACTION_META = {
+            added_favorite:   { icon:"❤️",  color:"#ec4899", label:"added to favorites" },
+            removed_favorite: { icon:"💔",  color:"#6b7280", label:"removed from favorites" },
+            wrote_review:     { icon:"⭐",  color:"#f5c842", label:"wrote a review" },
+            signed_up:        { icon:"🆕",  color:"#22c55e", label:"signed up" },
+            went_premium:     { icon:"👑",  color:"#f5c842", label:"went premium" },
+        };
+
+        async function loadActivityFeed() {
+            const feed    = document.getElementById("activityFeed");
+            const countEl = document.getElementById("activityCount");
+            try {
+                const data = await fetch("/admin/api/activity").then(r => r.json());
+                if (!data.length) {
+                    feed.innerHTML = '<div class="activity-empty">No activity yet. Actions will appear here once users interact with the app.</div>';
+                    countEl.textContent = "0 events";
+                    return;
+                }
+                countEl.textContent = `${data.length} recent events`;
+                feed.innerHTML = data.map(ev => {
+                    const m    = ACTION_META[ev.action] || { icon:"🔔", color:"#7f5cff", label: ev.action };
+                    const time = ev.timestamp ? ev.timestamp.slice(0,16).replace("T"," ") : "—";
+                    return `<div class="activity-item">
+                        <div class="activity-icon" style="background:${m.color}22;color:${m.color}">${m.icon}</div>
+                        <div class="activity-body">
+                            <span class="activity-user">${ev.username || "Unknown"}</span>
+                            <span class="activity-action">${m.label}</span>
+                            ${ev.detail ? `<span class="activity-detail">— ${ev.detail}</span>` : ""}
+                        </div>
+                        <div class="activity-time">${time}</div>
+                    </div>`;
+                }).join("");
+            } catch {
+                feed.innerHTML = '<div class="activity-empty">Failed to load activity.</div>';
+            }
+        }
+        loadActivityFeed();
+        setInterval(loadActivityFeed, 30000);
+
+        // ── Genre Chart ──────────────────────────────────────────────
+        const CHART_COLORS = ["#7f5cff","#ec4899","#f5c842","#22c55e","#38bdf8","#f97316","#a855f7","#ef4444","#14b8a6"];
+
+        async function loadGenreChart() {
+            const el = document.getElementById("genreChart");
+            try {
+                const data = await fetch("/admin/api/genre-breakdown").then(r => r.json());
+                if (!data.length) { el.innerHTML = '<div class="activity-empty">No genre data yet.</div>'; return; }
+                const max = data[0].count;
+                el.innerHTML = data.map((item, i) => `
+                    <div class="genre-bar-row">
+                        <div class="genre-bar-label">${item.genre}</div>
+                        <div class="genre-bar-track">
+                            <div class="genre-bar-fill" style="width:${Math.round((item.count/max)*100)}%;background:${CHART_COLORS[i%CHART_COLORS.length]}"></div>
+                        </div>
+                        <div class="genre-bar-count">${item.count}</div>
+                    </div>`).join("");
+            } catch { el.innerHTML = '<div class="activity-empty">Failed to load chart.</div>'; }
+        }
+        loadGenreChart();
+
+        // ── Content Management ───────────────────────────────────────
+        let contentSearchTimer = null;
+
+        function searchContent() {
+            clearTimeout(contentSearchTimer);
+            contentSearchTimer = setTimeout(async () => {
+                const q    = document.getElementById("contentSearch").value.trim();
+                const type = document.getElementById("contentTypeFilter").value;
+                if (!q && !type) return;
+                const data = await fetch(`/admin/content?q=${encodeURIComponent(q)}&type=${type}`).then(r => r.json());
+                const tbody = document.getElementById("contentTableBody");
+                if (!data.length) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="muted-cell" style="padding:20px;text-align:center">No results found</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = data.map(item => `
+                    <tr id="content-row-${item.id}">
+                        <td><img src="${item.poster_url||''}" style="width:36px;height:52px;object-fit:cover;border-radius:6px" onerror="this.style.display='none'"></td>
+                        <td style="font-weight:600;color:#e8eaf0">${item.title}</td>
+                        <td><span class="${item.type==='anime'?'badge-admin':'badge-free'}">${item.type}</span></td>
+                        <td class="muted-cell">${item.release_year||'—'}</td>
+                        <td><span class="rating-pill">★ ${item.rating||'—'}</span></td>
+                        <td class="muted-cell" style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${item.genres||'—'}</td>
+                        <td style="display:flex;gap:6px;padding-top:14px">
+                            <button class="action-safe" onclick='openEditModal(${JSON.stringify(item)})'>Edit</button>
+                            <button class="action-danger" onclick="deleteContent(${item.id},'${item.title.replace(/'/g,"\\'").replace(/"/g,"&quot;")}')">Delete</button>
+                        </td>
+                    </tr>`).join("");
+            }, 300);
+        }
+
+        function openEditModal(item) {
+            document.getElementById("editId").value          = item.id;
+            document.getElementById("editTitle").value       = item.title || "";
+            document.getElementById("editType").value        = item.type  || "anime";
+            document.getElementById("editYear").value        = item.release_year || "";
+            document.getElementById("editRating").value      = item.rating || "";
+            document.getElementById("editEpDur").value       = item.episodes || item.duration || "";
+            document.getElementById("editGenres").value      = item.genres || "";
+            document.getElementById("editPoster").value      = item.poster_url || "";
+            document.getElementById("editBackground").value  = item.background_url || "";
+            document.getElementById("editTrailer").value     = item.trailer_url || "";
+            document.getElementById("editDescription").value = item.description || "";
+            document.getElementById("editModal").style.display = "flex";
+        }
+
+        function closeEditModal() { document.getElementById("editModal").style.display = "none"; }
+
+        async function saveEdit() {
+            const id   = document.getElementById("editId").value;
+            const type = document.getElementById("editType").value;
+            const epDur = document.getElementById("editEpDur").value;
+            const res  = await fetch(`/admin/content/edit/${id}`, {
+                method: "POST", headers: {"Content-Type":"application/json"},
+                body: JSON.stringify({
+                    title:          document.getElementById("editTitle").value,
+                    type, release_year: document.getElementById("editYear").value||null,
+                    rating:         document.getElementById("editRating").value||null,
+                    genres:         document.getElementById("editGenres").value,
+                    poster_url:     document.getElementById("editPoster").value,
+                    background_url: document.getElementById("editBackground").value,
+                    trailer_url:    document.getElementById("editTrailer").value,
+                    description:    document.getElementById("editDescription").value,
+                    episodes: type==="anime" ? (epDur||null) : null,
+                    duration:  type==="movie"  ? (epDur||null) : null,
+                })
+            });
+            const data = await res.json();
+            closeEditModal();
+            if (data.success) { showToast("Content updated ✅"); searchContent(); }
+            else showToast("Update failed", true);
+        }
+
+        async function deleteContent(id, title) {
+            if (!confirm(`Delete "${title}"? This also removes all its reviews and favorites.`)) return;
+            const data = await fetch(`/admin/content/delete/${id}`, {method:"POST"}).then(r=>r.json());
+            if (data.success) { document.getElementById(`content-row-${id}`)?.remove(); showToast("Deleted."); }
+            else showToast("Delete failed.", true);
+        }
+
+        // ── Add content ──────────────────────────────────────────────
+        let currentAddSrc = "tmdb";
+
+        function openAddModal()  { document.getElementById("addModal").style.display = "flex"; }
+        function closeAddModal() { document.getElementById("addModal").style.display = "none"; }
+
+        function switchAddTab(src) {
+            currentAddSrc = src;
+            document.querySelectorAll(".add-tab").forEach(t => t.classList.remove("active"));
+            document.querySelector(`[data-src="${src}"]`).classList.add("active");
+            document.querySelectorAll(".add-source").forEach(s => s.style.display = "none");
+            document.getElementById(`src-${src}`).style.display = "block";
+        }
+
+        async function submitAdd() {
+            const btn = document.getElementById("addSubmitBtn");
+            btn.textContent = "Adding…"; btn.disabled = true;
+            let payload = { source: currentAddSrc };
+            if (currentAddSrc === "tmdb")  payload.tmdb_id = document.getElementById("tmdbId").value;
+            else if (currentAddSrc === "jikan") payload.mal_id = document.getElementById("jikanId").value;
+            else payload = {
+                source: "manual",
+                title: document.getElementById("manualTitle").value,
+                type:  document.getElementById("manualType").value,
+                release_year: document.getElementById("manualYear").value||null,
+                rating:       document.getElementById("manualRating").value||null,
+                genres:       document.getElementById("manualGenres").value,
+                poster_url:   document.getElementById("manualPoster").value,
+                background_url: document.getElementById("manualBackground").value,
+                trailer_url:  document.getElementById("manualTrailer").value,
+                description:  document.getElementById("manualDesc").value,
+            };
+            const data = await fetch("/admin/content/add",{
+                method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload)
+            }).then(r=>r.json());
+            btn.textContent = "Add Content"; btn.disabled = false;
+            closeAddModal();
+            if (data.success) showToast(`"${data.title}" added ✅`);
+            else showToast(data.error || "Add failed", true);
+        }
+
+        // ── User search / ban ────────────────────────────────────────
+        function filterUsers() {
+            const q = document.getElementById("userSearch").value.toLowerCase();
+            document.querySelectorAll("#usersBody tr").forEach(row => {
+                row.style.display = row.dataset.username?.includes(q) ? "" : "none";
+            });
+        }
+
+        async function deleteReviewAdmin(reviewId) {
+            if (!confirm("Delete this review?")) return;
+            const data = await fetch(`/delete-review/${reviewId}`,{method:"POST"}).then(r=>r.json());
+            if (data.success) { document.getElementById(`review-row-${reviewId}`)?.remove(); showToast("Review deleted."); }
+            else showToast("Failed.", true);
+        }
+
+        let pendingBanId = null;
+
+        function banUser(userId, username) {
+            pendingBanId = userId;
+            document.getElementById("banModalText").textContent =
+                `Ban "${username}"? This permanently deletes their account, reviews, and favorites. Cannot be undone.`;
+            document.getElementById("banModal").style.display = "flex";
+        }
+        function closeBanModal() { pendingBanId = null; document.getElementById("banModal").style.display = "none"; }
+
+        document.getElementById("banConfirmBtn").addEventListener("click", async () => {
+            if (!pendingBanId) return;
+            const data = await fetch(`/admin/ban-user/${pendingBanId}`,{method:"POST"}).then(r=>r.json());
+            closeBanModal();
+            if (data.success) { document.getElementById(`user-row-${pendingBanId}`)?.remove(); showToast("User banned."); }
+            else showToast(data.error || "Failed.", true);
+        });
+
+        // Close modals on backdrop click
+        document.querySelectorAll(".modal-overlay").forEach(o => {
+            o.addEventListener("click", e => { if (e.target === o) o.style.display = "none"; });
+        });
+        </script>
+
         {% endblock %}
     </main>
-
-
 </div>
-
 </body>
 </html>

@@ -91,4 +91,20 @@
 -- ALTER TABLE users ADD COLUMN premium_type TEXT;
 -- ALTER TABLE users ADD COLUMN premium_expiry DATETIME;
 
-PRAGMA table_info(content)
+-- PRAGMA table_info(content)
+
+-- CREATE TABLE IF NOT EXISTS activity_log (
+--     id         INTEGER PRIMARY KEY AUTOINCREMENT,
+--     user_id    INTEGER,
+--     username   TEXT,
+--     action     TEXT NOT NULL,
+--     detail     TEXT,
+--     content_id INTEGER,
+--     timestamp  DATETIME DEFAULT CURRENT_TIMESTAMP
+-- );
+
+-- CREATE TABLE IF NOT EXISTS watchlist (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, content_id INTEGER NOT NULL, status TEXT NOT NULL CHECK(status IN ('plan_to_watch','completed')), added_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE, FOREIGN KEY (content_id) REFERENCES content(id) ON DELETE CASCADE, UNIQUE (user_id, content_id));
+
+-- CREATE TABLE IF NOT EXISTS dismissed (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, content_id INTEGER NOT NULL, dismissed_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE, FOREIGN KEY (content_id) REFERENCES content(id) ON DELETE CASCADE, UNIQUE (user_id, content_id));
+
+-- CREATE TABLE IF NOT EXISTS activity_log (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, username TEXT, action TEXT NOT NULL, detail TEXT, content_id INTEGER, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP);

@@ -71,6 +71,18 @@ Rules:
 def is_admin():
     return session.get("user_id") in [1, 30]
 
+def log_activity(user_id, username, action, detail=None, content_id=None):
+    """Insert a row into activity_log. Silently ignores errors."""
+    try:
+        db = get_db()
+        db.execute("""
+            INSERT INTO activity_log (user_id, username, action, detail, content_id)
+            VALUES (?, ?, ?, ?, ?)
+        """, (user_id, username, action, detail, content_id))
+        db.commit()
+    except Exception as e:
+        print(f"[activity_log] error: {e}")
+
 @app.context_processor
 def inject_admin_flag():
     return {
@@ -82,6 +94,15 @@ def inject_admin_flag():
 def teardown_db(exception):
     close_db()
 
+# ── Error handlers ───────────────────────────────────────────────
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template("404.html"), 404
+
+@app.errorhandler(500)
+def server_error(e):
+    return render_template("500.html"), 500
+
 # ── Keep-alive ping endpoint ─────────────────────────────────────
 @app.route("/ping")
 def ping():
@@ -92,7 +113,112 @@ def ping():
 def admin_dashboard():
     if "user_id" not in session or not is_admin():
         return redirect("/login")
-    return render_template("admin/dashboard.html")
+
+    db = get_db()
+    from datetime import date
+
+    today = date.today().isoformat()
+    week_ago = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
+
+    # ── Stats ──
+    stats = {}
+    stats["total_users"]    = db.execute("SELECT COUNT(*) FROM users").fetchone()[0]
+    stats["total_content"]  = db.execute("SELECT COUNT(*) FROM content").fetchone()[0]
+    stats["total_anime"]    = db.execute("SELECT COUNT(*) FROM content WHERE type='anime'").fetchone()[0]
+    stats["total_movies"]   = db.execute("SELECT COUNT(*) FROM content WHERE type='movie'").fetchone()[0]
+    stats["total_reviews"]  = db.execute("SELECT COUNT(*) FROM reviews").fetchone()[0]
+    stats["total_favorites"]= db.execute("SELECT COUNT(*) FROM favorites").fetchone()[0]
+    stats["total_chats"]    = db.execute("SELECT COUNT(*) FROM chatbot_logs").fetchone()[0]
+    stats["total_premium"]  = db.execute("SELECT COUNT(*) FROM users WHERE is_premium=1").fetchone()[0]
+    stats["premium_monthly"]= db.execute("SELECT COUNT(*) FROM users WHERE premium_type='monthly'").fetchone()[0]
+    stats["premium_yearly"] = db.execute("SELECT COUNT(*) FROM users WHERE premium_type='yearly'").fetchone()[0]
+    stats["new_users_today"]= db.execute("SELECT COUNT(*) FROM users WHERE DATE(created_at)=?", (today,)).fetchone()[0]
+    stats["new_users_week"] = db.execute("SELECT COUNT(*) FROM users WHERE DATE(created_at)>=?", (week_ago,)).fetchone()[0]
+
+    avg = db.execute("SELECT ROUND(AVG(rating),1) FROM reviews").fetchone()[0]
+    stats["avg_rating"] = avg or "—"
+
+    # ── Recent signups (last 15) ──
+    recent_users = db.execute("""
+        SELECT id, username, created_at, is_premium, premium_type, avatar_type, avatar_value
+        FROM users ORDER BY id DESC LIMIT 15
+    """).fetchall()
+
+    # ── Recent reviews (last 15) ──
+    recent_reviews = db.execute("""
+        SELECT r.id, r.rating, r.content_id, r.created_at,
+               u.username, c.title
+        FROM reviews r
+        JOIN users u ON r.user_id = u.id
+        JOIN content c ON r.content_id = c.id
+        ORDER BY r.created_at DESC LIMIT 15
+    """).fetchall()
+
+    # ── Most favorited (top 8) ──
+    most_favorited = db.execute("""
+        SELECT c.id, c.title, c.type, c.poster_url, COUNT(f.id) as fav_count
+        FROM favorites f JOIN content c ON f.content_id = c.id
+        GROUP BY f.content_id ORDER BY fav_count DESC LIMIT 8
+    """).fetchall()
+
+    # ── Most reviewed (top 8) ──
+    most_reviewed = db.execute("""
+        SELECT c.id, c.title, c.poster_url, COUNT(r.id) as review_count,
+               ROUND(AVG(r.rating),1) as avg_r
+        FROM reviews r JOIN content c ON r.content_id = c.id
+        GROUP BY r.content_id ORDER BY review_count DESC LIMIT 8
+    """).fetchall()
+
+    # ── Recent chats (last 5) ──
+    recent_chats = db.execute("""
+        SELECT cl.user_message, cl.bot_response, cl.timestamp, u.username
+        FROM chatbot_logs cl
+        LEFT JOIN users u ON cl.user_id = u.id
+        ORDER BY cl.timestamp DESC LIMIT 5
+    """).fetchall()
+
+    # ── All users with review + fav counts ──
+    all_users = db.execute("""
+        SELECT u.*,
+               COUNT(DISTINCT r.id) as review_count,
+               COUNT(DISTINCT f.id) as fav_count
+        FROM users u
+        LEFT JOIN reviews r ON r.user_id = u.id
+        LEFT JOIN favorites f ON f.user_id = u.id
+        GROUP BY u.id
+        ORDER BY u.id DESC
+    """).fetchall()
+
+    return render_template(
+        "admin/dashboard.html",
+        stats=stats,
+        recent_users=recent_users,
+        recent_reviews=recent_reviews,
+        most_favorited=most_favorited,
+        most_reviewed=most_reviewed,
+        recent_chats=recent_chats,
+        all_users=all_users,
+    )
+
+
+@app.route("/admin/ban-user/<int:user_id>", methods=["POST"])
+def ban_user(user_id):
+    if "user_id" not in session or not is_admin():
+        return jsonify({"error": "Unauthorized"}), 403
+
+    # Never allow banning admin accounts
+    if user_id in [1, 30]:
+        return jsonify({"error": "Cannot ban admin accounts"}), 403
+
+    db = get_db()
+    # Delete all user data then the account
+    db.execute("DELETE FROM favorites WHERE user_id=?", (user_id,))
+    db.execute("DELETE FROM reviews WHERE user_id=?", (user_id,))
+    db.execute("DELETE FROM chatbot_logs WHERE user_id=?", (user_id,))
+    db.execute("DELETE FROM users WHERE id=?", (user_id,))
+    db.commit()
+
+    return jsonify({"success": True})
 
 @app.route("/admin/spotlight", methods=["GET", "POST"])
 def admin_spotlight():
@@ -150,6 +276,9 @@ def signup():
                 (username, generate_password_hash(password))
             )
             db.commit()
+            new_user = db.execute("SELECT id FROM users WHERE username=?", (username,)).fetchone()
+            if new_user:
+                log_activity(new_user["id"], username, "signed_up", "New account created")
             return redirect(url_for("login"))
 
         except Exception:
@@ -357,6 +486,15 @@ def api_add_favorite():
         return jsonify({"error": "Missing content_id"}), 400
 
     add_favorite(user_id, content_id)
+    # Log activity
+    try:
+        db2 = get_db()
+        user_row = db2.execute("SELECT username FROM users WHERE id=?", (user_id,)).fetchone()
+        title_row = db2.execute("SELECT title FROM content WHERE id=?", (content_id,)).fetchone()
+        uname = user_row["username"] if user_row else "Unknown"
+        title = title_row["title"] if title_row else f"#{content_id}"
+        log_activity(user_id, uname, "added_favorite", title, content_id)
+    except Exception: pass
     return jsonify({"success": True})
 
 
@@ -372,6 +510,15 @@ def api_remove_favorite():
     if not content_id:
         return jsonify({"error": "Missing content_id"}), 400
 
+    # Log before removing so we still have access to content info
+    try:
+        db2 = get_db()
+        user_row = db2.execute("SELECT username FROM users WHERE id=?", (user_id,)).fetchone()
+        title_row = db2.execute("SELECT title FROM content WHERE id=?", (content_id,)).fetchone()
+        uname = user_row["username"] if user_row else "Unknown"
+        title = title_row["title"] if title_row else f"#{content_id}"
+        log_activity(user_id, uname, "removed_favorite", title, content_id)
+    except Exception: pass
     remove_favorite(user_id, content_id)
     return jsonify({"success": True})
 
@@ -498,7 +645,7 @@ def content_detail(content_id):
     ).fetchone()
 
     if content is None:
-        return "Content not found", 404
+        return render_template("404.html"), 404
 
     return render_template("detail.html", content=content)
 
@@ -599,13 +746,14 @@ def api_recommended():
         WHERE c.type = ?
         AND ({genre_conditions})
         AND c.id NOT IN (
-            SELECT content_id
-            FROM favorites
-            WHERE user_id = ?
+            SELECT content_id FROM favorites WHERE user_id = ?
+        )
+        AND c.id NOT IN (
+            SELECT content_id FROM dismissed WHERE user_id = ?
         )
         ORDER BY RANDOM()
         LIMIT 10
-    """, [content_type, *genre_params, user_id]).fetchall()
+    """, [content_type, *genre_params, user_id, user_id]).fetchall()
 
     reason = "Because you like " + ", ".join(preferred_genres[:3])
 
@@ -666,10 +814,13 @@ def because_you_liked():
         AND id NOT IN (
             SELECT content_id FROM reviews WHERE user_id = ?
         )
+        AND id NOT IN (
+            SELECT content_id FROM dismissed WHERE user_id = ?
+        )
         AND (
     """
 
-    params = [source["type"], source["id"], user_id, user_id]
+    params = [source["type"], source["id"], user_id, user_id, user_id]
 
     genre_conditions = []
     for g in genres:
@@ -732,9 +883,12 @@ def out_of_comfort(content_type):
         AND c.id NOT IN (
             SELECT content_id FROM reviews WHERE user_id = ?
         )
+        AND c.id NOT IN (
+            SELECT content_id FROM dismissed WHERE user_id = ?
+        )
         ORDER BY RANDOM()
         LIMIT 10
-    """, [content_type, *genre_params, user_id, user_id]).fetchall()
+    """, [content_type, *genre_params, user_id, user_id, user_id]).fetchall()
 
     return jsonify({
         "items": [dict(row) for row in results],
@@ -874,8 +1028,15 @@ def add_review():
         data["rating"],
         data["comment"]
     ))
-
     db.commit()
+    # Log activity
+    try:
+        user_row = db.execute("SELECT username FROM users WHERE id=?", (session["user_id"],)).fetchone()
+        title_row = db.execute("SELECT title FROM content WHERE id=?", (data["content_id"],)).fetchone()
+        uname = user_row["username"] if user_row else "Unknown"
+        title = title_row["title"] if title_row else f"#{data['content_id']}"
+        log_activity(session["user_id"], uname, "wrote_review", f"{title} — ★{data['rating']}", data["content_id"])
+    except Exception: pass
     return jsonify({"success": True})
 
 
@@ -921,13 +1082,25 @@ def profile():
         LIMIT 6
     """, (session["user_id"],)).fetchall()
 
+    # Watchlist counts for profile stats
+    plan_count = db.execute(
+        "SELECT COUNT(*) FROM watchlist WHERE user_id=? AND status='plan_to_watch'",
+        (session["user_id"],)
+    ).fetchone()[0]
+    completed_count = db.execute(
+        "SELECT COUNT(*) FROM watchlist WHERE user_id=? AND status='completed'",
+        (session["user_id"],)
+    ).fetchone()[0]
+
     return render_template(
         "profile.html",
         user=user,
         favorites=favorites,
         reviews=reviews,
         top_rated=top_rated,
-        show_toast=show_toast
+        show_toast=show_toast,
+        plan_count=plan_count,
+        completed_count=completed_count
     )
 
 @app.route("/set-avatar", methods=["POST"])
@@ -1020,6 +1193,12 @@ def upgrade(plan):
     """, (plan, expiry.strftime("%Y-%m-%d %H:%M:%S"), user_id))
 
     db.commit()
+    # Log activity
+    try:
+        user_row = db.execute("SELECT username FROM users WHERE id=?", (user_id,)).fetchone()
+        uname = user_row["username"] if user_row else "Unknown"
+        log_activity(user_id, uname, "went_premium", f"{plan} plan activated")
+    except Exception: pass
     db.close()
 
     return redirect("/")
@@ -1164,6 +1343,384 @@ def admin_chat_logs():
     """).fetchall()
     return render_template("admin/chat_logs.html", logs=logs)
 
+
+
+
+
+# ================================================================
+#  WATCHLIST
+# ================================================================
+
+@app.route("/watchlist")
+def watchlist_page():
+    if "user_id" not in session:
+        return redirect("/login")
+    return render_template("watchlist.html")
+
+
+@app.route("/api/watchlist/add", methods=["POST"])
+def api_watchlist_add():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"login_required": True}), 401
+    data = request.json
+    content_id = data.get("content_id")
+    status = data.get("status")  # 'plan_to_watch' or 'completed'
+    if not content_id or status not in ("plan_to_watch", "completed"):
+        return jsonify({"error": "Invalid data"}), 400
+    db = get_db()
+    # Upsert — if already exists, update status
+    existing = db.execute(
+        "SELECT id FROM watchlist WHERE user_id=? AND content_id=?",
+        (user_id, content_id)
+    ).fetchone()
+    if existing:
+        db.execute(
+            "UPDATE watchlist SET status=? WHERE user_id=? AND content_id=?",
+            (status, user_id, content_id)
+        )
+    else:
+        db.execute(
+            "INSERT INTO watchlist (user_id, content_id, status) VALUES (?,?,?)",
+            (user_id, content_id, status)
+        )
+    db.commit()
+    # Log activity
+    try:
+        user_row = db.execute("SELECT username FROM users WHERE id=?", (user_id,)).fetchone()
+        title_row = db.execute("SELECT title FROM content WHERE id=?", (content_id,)).fetchone()
+        uname = user_row["username"] if user_row else "Unknown"
+        title = title_row["title"] if title_row else f"#{content_id}"
+        label = "plan to watch" if status == "plan_to_watch" else "completed"
+        log_activity(user_id, uname, "watchlist_add", f"{title} — marked as {label}", content_id)
+    except Exception: pass
+    return jsonify({"success": True, "status": status})
+
+
+@app.route("/api/watchlist/remove", methods=["POST"])
+def api_watchlist_remove():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"login_required": True}), 401
+    data = request.json
+    content_id = data.get("content_id")
+    if not content_id:
+        return jsonify({"error": "Missing content_id"}), 400
+    db = get_db()
+    db.execute(
+        "DELETE FROM watchlist WHERE user_id=? AND content_id=?",
+        (user_id, content_id)
+    )
+    db.commit()
+    return jsonify({"success": True})
+
+
+@app.route("/api/watchlist/status/<int:content_id>")
+def api_watchlist_status(content_id):
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"status": None})
+    db = get_db()
+    row = db.execute(
+        "SELECT status FROM watchlist WHERE user_id=? AND content_id=?",
+        (user_id, content_id)
+    ).fetchone()
+    return jsonify({"status": row["status"] if row else None})
+
+
+@app.route("/api/watchlist")
+def api_watchlist_get():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"login_required": True}), 401
+    status_filter = request.args.get("status")  # plan_to_watch / completed / None for all
+    content_type  = request.args.get("type")
+    db = get_db()
+    query = """
+        SELECT c.*, w.status, w.added_at
+        FROM watchlist w
+        JOIN content c ON c.id = w.content_id
+        WHERE w.user_id = ?
+    """
+    params = [user_id]
+    if status_filter:
+        query += " AND w.status = ?"
+        params.append(status_filter)
+    if content_type:
+        query += " AND c.type = ?"
+        params.append(content_type)
+    query += " ORDER BY w.added_at DESC"
+    rows = db.execute(query, params).fetchall()
+    return jsonify([dict(r) for r in rows])
+
+
+# ================================================================
+#  NOT INTERESTED (DISMISS)
+# ================================================================
+
+@app.route("/api/dismiss", methods=["POST"])
+def api_dismiss():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"login_required": True}), 401
+    data = request.json
+    content_id = data.get("content_id")
+    if not content_id:
+        return jsonify({"error": "Missing content_id"}), 400
+    db = get_db()
+    try:
+        db.execute(
+            "INSERT OR IGNORE INTO dismissed (user_id, content_id) VALUES (?,?)",
+            (user_id, content_id)
+        )
+        db.commit()
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    return jsonify({"success": True})
+
+
+@app.route("/api/dismiss/clear", methods=["POST"])
+def api_dismiss_clear():
+    """Let users reset their dismissed list from profile settings."""
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"login_required": True}), 401
+    db = get_db()
+    db.execute("DELETE FROM dismissed WHERE user_id=?", (user_id,))
+    db.commit()
+    return jsonify({"success": True})
+
+
+@app.route("/api/watchlist/homerow")
+def api_watchlist_homerow():
+    """Returns plan_to_watch and completed rows for the home page."""
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"plan": [], "completed": []})
+    content_type = request.args.get("type", "anime")
+    db = get_db()
+    plan = db.execute("""
+        SELECT c.*, w.added_at
+        FROM watchlist w JOIN content c ON c.id = w.content_id
+        WHERE w.user_id = ? AND w.status = 'plan_to_watch' AND c.type = ?
+        ORDER BY w.added_at DESC LIMIT 15
+    """, (user_id, content_type)).fetchall()
+    completed = db.execute("""
+        SELECT c.*, w.added_at
+        FROM watchlist w JOIN content c ON c.id = w.content_id
+        WHERE w.user_id = ? AND w.status = 'completed' AND c.type = ?
+        ORDER BY w.added_at DESC LIMIT 15
+    """, (user_id, content_type)).fetchall()
+    return jsonify({
+        "plan":      [dict(r) for r in plan],
+        "completed": [dict(r) for r in completed]
+    })
+
+
+@app.route("/api/dismissed")
+def api_get_dismissed():
+    """Returns the user's full dismissed list."""
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"login_required": True}), 401
+    db = get_db()
+    rows = db.execute("""
+        SELECT c.id, c.title, c.poster_url, c.type, d.dismissed_at
+        FROM dismissed d JOIN content c ON c.id = d.content_id
+        WHERE d.user_id = ?
+        ORDER BY d.dismissed_at DESC
+    """, (user_id,)).fetchall()
+    return jsonify([dict(r) for r in rows])
+
+
+@app.route("/api/dismissed/restore", methods=["POST"])
+def api_restore_dismissed():
+    """Remove a single title from the dismissed list (un-dismiss)."""
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"login_required": True}), 401
+    content_id = (request.json or {}).get("content_id")
+    if not content_id:
+        return jsonify({"error": "Missing content_id"}), 400
+    db = get_db()
+    db.execute("DELETE FROM dismissed WHERE user_id=? AND content_id=?", (user_id, content_id))
+    db.commit()
+    return jsonify({"success": True})
+
+# ================================================================
+#  ADMIN — CONTENT MANAGEMENT
+# ================================================================
+
+@app.route("/admin/content")
+def admin_content():
+    if "user_id" not in session or not is_admin():
+        return redirect("/login")
+    db = get_db()
+    q = request.args.get("q", "").strip()
+    ctype = request.args.get("type", "")
+    query = "SELECT * FROM content WHERE 1=1"
+    params = []
+    if q:
+        query += " AND title LIKE ?"
+        params.append(f"%{q}%")
+    if ctype:
+        query += " AND type = ?"
+        params.append(ctype)
+    query += " ORDER BY title LIMIT 100"
+    items = db.execute(query, params).fetchall()
+    return jsonify([dict(i) for i in items])
+
+
+@app.route("/admin/content/edit/<int:content_id>", methods=["POST"])
+def admin_edit_content(content_id):
+    if "user_id" not in session or not is_admin():
+        return jsonify({"error": "Unauthorized"}), 403
+    data = request.json
+    db = get_db()
+    db.execute("""
+        UPDATE content
+        SET title=?, type=?, genres=?, release_year=?, rating=?,
+            description=?, poster_url=?, background_url=?, trailer_url=?,
+            episodes=?, duration=?
+        WHERE id=?
+    """, (
+        data.get("title"), data.get("type"), data.get("genres"),
+        data.get("release_year"), data.get("rating"),
+        data.get("description"), data.get("poster_url"),
+        data.get("background_url"), data.get("trailer_url"),
+        data.get("episodes"), data.get("duration"),
+        content_id
+    ))
+    db.commit()
+    return jsonify({"success": True})
+
+
+@app.route("/admin/content/delete/<int:content_id>", methods=["POST"])
+def admin_delete_content(content_id):
+    if "user_id" not in session or not is_admin():
+        return jsonify({"error": "Unauthorized"}), 403
+    db = get_db()
+    db.execute("DELETE FROM favorites WHERE content_id=?", (content_id,))
+    db.execute("DELETE FROM reviews WHERE content_id=?", (content_id,))
+    db.execute("DELETE FROM content WHERE id=?", (content_id,))
+    db.commit()
+    return jsonify({"success": True})
+
+
+@app.route("/admin/content/add", methods=["POST"])
+def admin_add_content():
+    if "user_id" not in session or not is_admin():
+        return jsonify({"error": "Unauthorized"}), 403
+    data = request.json
+    source = data.get("source", "manual")
+    db = get_db()
+
+    if source == "tmdb":
+        import requests as _r
+        tmdb_key = os.getenv("TMDB_API_KEY")
+        tmdb_id = data.get("tmdb_id")
+        if not tmdb_key or not tmdb_id:
+            return jsonify({"error": "Missing TMDB key or ID"}), 400
+        resp = _r.get(f"https://api.themoviedb.org/3/movie/{tmdb_id}",
+                      params={"api_key": tmdb_key}, timeout=10)
+        if resp.status_code != 200:
+            return jsonify({"error": "TMDB fetch failed"}), 400
+        m = resp.json()
+        # Trailer
+        vresp = _r.get(f"https://api.themoviedb.org/3/movie/{tmdb_id}/videos",
+                       params={"api_key": tmdb_key}, timeout=10)
+        trailer_url = None
+        if vresp.status_code == 200:
+            for v in vresp.json().get("results", []):
+                if v.get("site") == "YouTube" and "trailer" in v.get("name","").lower():
+                    trailer_url = f"https://www.youtube.com/embed/{v['key']}"
+                    break
+        genres = ",".join(g["name"].lower() for g in m.get("genres", []))
+        year = int(m.get("release_date","")[:4]) if m.get("release_date") else None
+        db.execute("""
+            INSERT INTO content (title,type,description,release_year,genres,
+                poster_url,background_url,trailer_url,rating,duration)
+            VALUES (?,?,?,?,?,?,?,?,?,?)
+        """, (
+            m.get("title"), "movie", m.get("overview"), year, genres,
+            f"https://image.tmdb.org/t/p/w500{m.get('poster_path')}" if m.get("poster_path") else None,
+            f"https://image.tmdb.org/t/p/w1280{m.get('backdrop_path')}" if m.get("backdrop_path") else None,
+            trailer_url, round(m.get("vote_average",0),1), m.get("runtime")
+        ))
+        db.commit()
+        return jsonify({"success": True, "title": m.get("title")})
+
+    elif source == "jikan":
+        import requests as _r
+        mal_id = data.get("mal_id")
+        if not mal_id:
+            return jsonify({"error": "Missing MAL ID"}), 400
+        resp = _r.get(f"https://api.jikan.moe/v4/anime/{mal_id}", timeout=10)
+        if resp.status_code != 200:
+            return jsonify({"error": "Jikan fetch failed"}), 400
+        a = resp.json().get("data", {})
+        genres = ",".join(g["name"].lower() for g in a.get("genres", []))
+        trailer_url = None
+        if a.get("trailer", {}).get("youtube_id"):
+            trailer_url = f"https://www.youtube.com/embed/{a['trailer']['youtube_id']}"
+        db.execute("""
+            INSERT INTO content (title,type,description,release_year,genres,
+                poster_url,background_url,trailer_url,rating,episodes)
+            VALUES (?,?,?,?,?,?,?,?,?,?)
+        """, (
+            a.get("title_english") or a.get("title"), "anime",
+            a.get("synopsis"), a.get("year"), genres,
+            a.get("images",{}).get("jpg",{}).get("large_image_url"),
+            a.get("images",{}).get("jpg",{}).get("large_image_url"),
+            trailer_url, a.get("score"), a.get("episodes")
+        ))
+        db.commit()
+        return jsonify({"success": True, "title": a.get("title_english") or a.get("title")})
+
+    else:
+        # Manual add
+        db.execute("""
+            INSERT INTO content (title,type,description,release_year,genres,
+                poster_url,background_url,trailer_url,rating,episodes,duration)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?)
+        """, (
+            data.get("title"), data.get("type"), data.get("description"),
+            data.get("release_year"), data.get("genres"),
+            data.get("poster_url"), data.get("background_url"),
+            data.get("trailer_url"), data.get("rating"),
+            data.get("episodes"), data.get("duration")
+        ))
+        db.commit()
+        return jsonify({"success": True, "title": data.get("title")})
+
+
+# ── Genre breakdown ───────────────────────────────────────────────
+@app.route("/admin/api/genre-breakdown")
+def admin_genre_breakdown():
+    if "user_id" not in session or not is_admin():
+        return jsonify({"error": "Unauthorized"}), 403
+    db = get_db()
+    users = db.execute("SELECT preferred_genres FROM users WHERE preferred_genres IS NOT NULL").fetchall()
+    counts = {}
+    for u in users:
+        for g in u["preferred_genres"].split(","):
+            g = g.strip().capitalize()
+            if g:
+                counts[g] = counts.get(g, 0) + 1
+    sorted_genres = sorted(counts.items(), key=lambda x: x[1], reverse=True)
+    return jsonify([{"genre": g, "count": c} for g, c in sorted_genres])
+
+
+# ── Activity feed ─────────────────────────────────────────────────
+@app.route("/admin/api/activity")
+def admin_activity_feed():
+    if "user_id" not in session or not is_admin():
+        return jsonify({"error": "Unauthorized"}), 403
+    db = get_db()
+    rows = db.execute("""
+        SELECT * FROM activity_log ORDER BY timestamp DESC LIMIT 50
+    """).fetchall()
+    return jsonify([dict(r) for r in rows])
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
